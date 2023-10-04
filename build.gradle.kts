@@ -19,7 +19,7 @@ group = "tz.co.asoft"
 version = v
 
 tasks.dokkaHtmlMultiModule {
-    moduleName.set("Sentinel Client")
+    moduleName.set("Sentinel Server")
     outputDirectory.set(rootDir.resolve("docs"))
     moduleVersion.set(libs.versions.asoft.get())
     includes.from("ReadMe.md")
