@@ -1,13 +1,14 @@
 package sentinel.transformers
 
 import krono.Clock
-import sentinel.SignUpCandidate
+import krono.currentJavaLocalDateTime
+import sentinel.RegistrationCandidate
 import sentinel.params.SignUpParams
 
-fun SignUpParams.toDao(clock: Clock) = SignUpCandidate(
+fun SignUpParams.toDao(clock: Clock) = RegistrationCandidate(
     name = name,
     email = email,
-    on = clock.currentMillisAsLong(),
-    sent = emptyList(),
+    on = clock.currentJavaLocalDateTime(),
+    tokens = emptyList(),
     verified = false
 )

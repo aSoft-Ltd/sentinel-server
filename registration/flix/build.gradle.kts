@@ -13,18 +13,22 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(libs.sentinel.registration.api.core)
+                api(libs.raven.api)
             }
         }
 
         val jvmMain by getting {
             dependencies {
                 implementation(db.mongo)
+                implementation(libs.raven.smtp)
+                implementation(libs.raven.mock)
+                implementation(libs.yeti.core)
             }
         }
 
         val commonTest by getting {
             dependencies {
-                api(libs.kommander.coroutines)
+                implementation(libs.kommander.coroutines)
             }
         }
     }
