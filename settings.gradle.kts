@@ -19,11 +19,10 @@ listOf(
     "lexi", "neat", "kash-api", "geo-api", "kase", "keep",
     "kronecker", "epsilon-api", "krono-core", "hormone", "identifier-api",
     "kommerce", "kollections", "koncurrent", "kommander", "cabinet-api",
-    "sentinel-api", "raven-client", "cinematic", "yeti"
+    "sentinel-core", "raven-client", "cinematic", "yeti"
 ).forEach { includeBuild("../$it") }
 
 rootProject.name = "sentinel-server"
 
-includeSubs("sentinel", ".", "daos")
-includeSubs("sentinel-registration-api", "registration", "flix")
+includeSubs("sentinel-registration-service", "registration", "core", "flix")
 includeSubs("sentinel-server", ".", "app")

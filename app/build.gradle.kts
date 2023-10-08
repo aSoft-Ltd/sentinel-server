@@ -17,7 +17,7 @@ kotlin {
         val main by getting {
             dependencies {
                 implementation(ktor.server.cio)
-                implementation(projects.sentinelRegistrationApiFlix)
+                implementation(projects.sentinelRegistrationServiceFlix)
             }
         }
 
