@@ -4,7 +4,7 @@ plugins {
     id("tz.co.asoft.library")
 }
 
-description = "A kotlin multiplatform sdk registration"
+description = "A kotlin multiplatform service implementation for the flix pattern"
 
 kotlin {
     jvm { library() }
@@ -14,16 +14,17 @@ kotlin {
             dependencies {
                 api(projects.sentinelRegistrationServiceCore)
                 api(libs.raven.api)
-                api(ktor.server.core)
+                api(libs.lexi.api)
             }
         }
 
         val jvmMain by getting {
             dependencies {
-                implementation(db.mongo)
-                implementation(libs.raven.smtp)
-                implementation(libs.raven.mock)
-                implementation(libs.yeti.core)
+                api(db.mongo)
+                api(libs.raven.smtp)
+                api(libs.lexi.console)
+                api(libs.raven.mock)
+                api(libs.yeti.core)
             }
         }
 
