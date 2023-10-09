@@ -24,7 +24,7 @@ import sentinel.params.SignUpParams
 import sentinel.params.VerificationParams
 import kotlin.test.Test
 
-class RegistrationApiFlixTest {
+class RegistrationServiceFlixTest {
 
     private val mailbox: MailBox = LocalMemoryMailbox()
 

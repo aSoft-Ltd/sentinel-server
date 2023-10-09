@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.toList
 import krono.currentJavaLocalDateTime
 import org.bson.types.ObjectId
 import raven.EmailDraft
+import sentinel.exceptions.UserAlreadyBeganRegistrationException
 import sentinel.exceptions.UserDidNotBeginRegistrationException
 import sentinel.params.SendVerificationLinkParams
 import sentinel.params.SignUpParams
@@ -26,11 +27,19 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixConfig)
     private val col = config.db.getCollection<RegistrationCandidate>("registration.candidates")
     private val mailer = config.mailer
     private val logger by config.logger
+    private val actions by lazy { RegistrationActionMessage() }
 
     override fun signUp(params: SignUpParams) = config.scope.later {
-        logger.info("beginning singing process for ${params.email}")
+        val action = actions.signUp(params.email)
+        logger.info(action.begin)
+        val candidates = col.find<SignUpParams>(Filters.eq(RegistrationCandidate::email.name, params.email)).toList()
+        if (candidates.isNotEmpty()) {
+            throw UserAlreadyBeganRegistrationException(params.email).apply {
+                logger.error(action.failed, *arrayOf("reason" to message))
+            }
+        }
         col.insertOne(params.toDao(config.clock))
-        logger.info("signing process for ${params.email} began successful")
+        logger.info(action.passed)
         params
     }
 

@@ -13,6 +13,8 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(projects.sentinelRegistrationServiceCore)
+                api(libs.sentinel.registration.flix)
+                api(libs.kase.response.core)
                 api(libs.raven.api)
                 api(libs.lexi.api)
             }

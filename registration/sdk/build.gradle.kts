@@ -14,7 +14,7 @@ kotlin {
             dependencies {
                 api(projects.sentinelRegistrationServiceFlix)
                 api(libs.sentinel.registration.flix)
-                api(libs.kase.response)
+                api(libs.kase.response.ktor.server)
                 api(ktor.server.core)
             }
         }
