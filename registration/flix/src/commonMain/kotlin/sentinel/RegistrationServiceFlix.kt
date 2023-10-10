@@ -12,7 +12,9 @@ import kotlinx.coroutines.flow.toList
 import krono.currentJavaLocalDateTime
 import org.bson.types.ObjectId
 import raven.EmailDraft
+import sentinel.exceptions.InvalidTokenForRegistrationException
 import sentinel.exceptions.UserAlreadyBeganRegistrationException
+import sentinel.exceptions.UserAlreadyCompletedRegistrationException
 import sentinel.exceptions.UserDidNotBeginRegistrationException
 import sentinel.params.SendVerificationLinkParams
 import sentinel.params.SignUpParams
@@ -32,11 +34,15 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixConfig)
     override fun signUp(params: SignUpParams) = config.scope.later {
         val action = actions.signUp(params.email)
         logger.info(action.begin)
-        val candidates = col.find<SignUpParams>(Filters.eq(RegistrationCandidate::email.name, params.email)).toList()
-        if (candidates.isNotEmpty()) {
-            throw UserAlreadyBeganRegistrationException(params.email).apply {
-                logger.error(action.failed, *arrayOf("reason" to message))
+        val candidates = col.find<RegistrationCandidate>(Filters.eq(RegistrationCandidate::email.name, params.email)).toList()
+        val candidate = candidates.firstOrNull()
+        if (candidate != null) {
+            val exp = when (candidate.verified) {
+                true -> UserAlreadyCompletedRegistrationException(params.email)
+                false -> UserAlreadyBeganRegistrationException(params.email)
             }
+            logger.error(action.failed, *arrayOf("reason" to exp.message))
+            throw exp
         }
         col.insertOne(params.toDao(config.clock))
         logger.info(action.passed)
@@ -44,10 +50,11 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixConfig)
     }
 
     override fun sendVerificationLink(params: SendVerificationLinkParams): Later<String> = config.scope.later {
+        val action = actions.sendVerificationLink(params.email)
         val email = params.email
         val link = params.link
         val candidates = col.find(Filters.eq(RegistrationCandidate::email.name, email)).toList()
-        if (candidates.isEmpty()) throw UserDidNotBeginRegistrationException(email)
+        if (candidates.isEmpty()) throw UserDidNotBeginRegistrationException(email).also { logger.error(action.failed, it) }
         val candidate = candidates.first()
         val token = ObjectId().toHexString().chunked(4).joinToString("-")
         coroutineScope {
@@ -75,10 +82,26 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixConfig)
             updateTask.await()
             sendTask.await()
         }
+        logger.info(action.passed)
         params.email
     }
 
-    override fun verify(params: VerificationParams): Later<VerificationParams> = TODOLater()
+    override fun verify(params: VerificationParams): Later<VerificationParams> = config.scope.later {
+        val action = actions.verify(params.email)
+        val candidates = col.find<RegistrationCandidate>(Filters.eq(RegistrationCandidate::email.name, params.email)).toList()
+        val candidate = candidates.firstOrNull() ?: throw UserDidNotBeginRegistrationException(params.email).also { logger.error(action.failed, it) }
+        if (candidate.verified) {
+            throw UserAlreadyCompletedRegistrationException(params.email).also { logger.error(action.failed, it) }
+        }
+        if (candidate.tokens.last().text != params.token) {
+            throw InvalidTokenForRegistrationException(params.token).also { logger.error(action.failed, it) }
+        }
+        val query = Filters.eq(RegistrationCandidate::email.name, params.email)
+        val update = Updates.set(RegistrationCandidate::verified.name, true)
+        col.updateOne(query, update)
+        logger.info(action.passed)
+        params
+    }
 
     override fun createUserAccount(params: UserAccountParams): Later<UserAccountParams> = TODOLater()
 }
