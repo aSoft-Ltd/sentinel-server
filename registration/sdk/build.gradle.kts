@@ -16,6 +16,7 @@ kotlin {
                 api(libs.sentinel.registration.flix)
                 api(libs.kase.response.ktor.server)
                 api(ktor.server.core)
+                api(kotlinx.serialization.json)
             }
         }
     }
