@@ -9,6 +9,7 @@ import koncurrent.later.await
 import kotlinx.serialization.StringFormat
 import sentinel.params.SendVerificationLinkParams
 import sentinel.params.SignUpParams
+import sentinel.params.UserAccountParams
 import sentinel.params.VerificationParams
 
 fun Routing.installRegistration(service: RegistrationService, endpoint: RegistrationEndpoint, codec: StringFormat) {
@@ -22,13 +23,14 @@ fun Routing.installRegistration(service: RegistrationService, endpoint: Registra
         service.sendVerificationLink(params).await()
     }
 
-    post(endpoint.verifyEmail(),codec) {
-        val params = codec.decodeFromString(VerificationParams.serializer(),call.receiveText())
+    post(endpoint.verifyEmail(), codec) {
+        val params = codec.decodeFromString(VerificationParams.serializer(), call.receiveText())
         service.verify(params).await()
     }
 
-    post<String>(endpoint.createAccount(),codec) {
-        TODO()
+    post(endpoint.createAccount(), codec) {
+        val params = codec.decodeFromString(UserAccountParams.serializer(), call.receiveText())
+        service.createUserAccount(params).await()
     }
 
     get(endpoint.status(), codec) {

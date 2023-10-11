@@ -1,9 +1,9 @@
 package sentinel.transformers
 
 import raven.AddressInfo
-import sentinel.RegistrationCandidate
+import sentinel.RegistrationCandidateDao
 
-fun RegistrationCandidate.toAddressInfo() = AddressInfo(
+fun RegistrationCandidateDao.toAddressInfo() = AddressInfo(
     email = email,
     name = name
 )

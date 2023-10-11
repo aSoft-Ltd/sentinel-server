@@ -2,10 +2,10 @@ package sentinel.transformers
 
 import krono.Clock
 import krono.currentJavaLocalDateTime
-import sentinel.RegistrationCandidate
+import sentinel.RegistrationCandidateDao
 import sentinel.params.SignUpParams
 
-fun SignUpParams.toDao(clock: Clock) = RegistrationCandidate(
+fun SignUpParams.toDao(clock: Clock) = RegistrationCandidateDao(
     name = name,
     email = email,
     on = clock.currentJavaLocalDateTime(),
