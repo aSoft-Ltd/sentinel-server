@@ -24,8 +24,7 @@ listOf(
 
 rootProject.name = "sentinel-server"
 
-val tmp = 0
-
-includeSubs("sentinel-registration-service", "registration", "core", "flix", "sdk")
 includeSubs("sentinel-reception-service", "reception", "flix", "sdk")
+includeSubs("sentinel-registration-service", "registration", "core", "flix", "sdk")
+includeSubs("sentinel-enterprise-authentication-service", "enterprise/authentication", "core", "flix", "sdk")
 includeSubs("sentinel-server", ".", "app")
