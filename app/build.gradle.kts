@@ -47,10 +47,14 @@ configure<DockateExtension> {
                 restart("always")
                 port(27017, 27017)
                 environment(
-                    "MONGODB_INITDB_ROOT_USERNAME" to "root",
-                    "MONGODB_INITDB_ROOT_PASSWORD" to "pass"
+                    "MONGO_INIT_ROOT_USERNAME" to "root",
+                    "MONGO_INIT_ROOT_PASSWORD" to "pass"
                 )
-                volumes("./data/db" to "/data/db")
+                volumes(
+                    "./data/logs" to "/data/logs",
+                    "./data/db" to "/data/db",
+                    "./data/configdb" to "/data/configdb",
+                )
             }
 
             service("server") {
