@@ -40,27 +40,26 @@ configure<DockateExtension> {
 
     dockerCompose {
         version(3.8)
+
+        val (database, root) = volumes("$name-database", "$name-root")
+
         services {
             val mongo = service("mongo") {
-//                image("mongodb/mongodb-community-server:7.0.0-ubuntu2204")
                 image("mongo:latest")
                 restart("always")
                 port(27017, 27017)
                 environment(
-                    "MONGO_INIT_ROOT_USERNAME" to "root",
-                    "MONGO_INIT_ROOT_PASSWORD" to "pass"
+                    "MONGO_INITDB_ROOT_USERNAME" to "root",
+                    "MONGO_INITDB_ROOT_PASSWORD" to "pass"
                 )
-                volumes(
-                    "./data/logs" to "/data/logs",
-                    "./data/db" to "/data/db",
-                    "./data/configdb" to "/data/configdb",
-                )
+                volumes(database to "/data/db")
             }
 
             service("server") {
                 image("$name:$version")
                 restart("always")
                 port(8080, 8080)
+                volumes(root to "/app/root")
                 dependsOn(mongo)
             }
         }
