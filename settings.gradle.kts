@@ -15,20 +15,16 @@ fun includeSubs(base: String, path: String = base, vararg subs: String) {
     }
 }
 
-/*
 listOf(
     "lexi", "neat", "kash-api", "geo-api", "kase", "keep",
     "kronecker", "epsilon-api", "krono-core", "hormone", "identifier-api",
     "kommerce", "kollections", "koncurrent", "kommander", "cabinet-api",
     "sentinel-core", "raven-client", "cinematic", "yeti"
 ).forEach { includeBuild("../$it") }
-*/
 
 rootProject.name = "sentinel-server"
 
-/*
 includeSubs("sentinel-reception-service", "reception", "flix", "sdk")
 includeSubs("sentinel-registration-service", "registration", "core", "flix", "sdk")
 includeSubs("sentinel-enterprise-authentication-service", "enterprise/authentication", "core", "flix", "sdk")
-*/
 includeSubs("sentinel-server", ".", "app")

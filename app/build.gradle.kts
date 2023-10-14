@@ -23,13 +23,7 @@ kotlin {
             dependencies {
                 implementation(ktor.server.cio)
                 implementation(ktor.server.cors)
-                // implementation(projects.sentinelRegistrationServiceSdk)
-            }
-        }
-
-        val test by getting {
-            dependencies {
-                // implementation(libs.kommander.coroutines)
+                implementation(projects.sentinelRegistrationServiceSdk)
             }
         }
     }
@@ -50,13 +44,13 @@ configure<DockateExtension> {
                 "MONGO_INITDB_ROOT_USERNAME" to "root",
                 "MONGO_INITDB_ROOT_PASSWORD" to "pass"
             )
-            volumes(database to "/data/db")
+            volume(database to "/data/db")
         }
 
         service(name = "server", image = app) {
             restart("always")
             port(8080, 2011)
-            volumes(root to "/app/root")
+            volume(root to "/app/root")
             dependsOn(mongo)
         }
     }
