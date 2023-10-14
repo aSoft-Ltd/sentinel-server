@@ -36,32 +36,36 @@ kotlin {
 }
 
 configure<DockateExtension> {
-    addDockerImageTasksForJvmApp(name = "app", port = 8080)
+    val app = jvmImage(port = 8080)
 
-    dockerCompose {
+    compose {
         version(3.8)
 
         val (database, root) = volumes("$name-database", "$name-root")
 
-        services {
-            val mongo = service("mongo") {
-                image("mongo:latest")
-                restart("always")
-                port(27017, 27017)
-                environment(
-                    "MONGO_INITDB_ROOT_USERNAME" to "root",
-                    "MONGO_INITDB_ROOT_PASSWORD" to "pass"
-                )
-                volumes(database to "/data/db")
-            }
+        val mongo = service(name = "mongo", image = "mongo:latest") {
+            restart("always")
+            port(27017, 2012)
+            environment(
+                "MONGO_INITDB_ROOT_USERNAME" to "root",
+                "MONGO_INITDB_ROOT_PASSWORD" to "pass"
+            )
+            volumes(database to "/data/db")
+        }
 
-            service("server") {
-                image("$name:$version")
-                restart("always")
-                port(8080, 8080)
-                volumes(root to "/app/root")
-                dependsOn(mongo)
-            }
+        service(name = "server", image = app) {
+            restart("always")
+            port(8080, 2011)
+            volumes(root to "/app/root")
+            dependsOn(mongo)
         }
     }
+
+    // must come after compose block
+    registry(
+        name = "picortex",
+        url = "http://65.21.254.230:1030",
+        user = "root",
+        pass = "bitframe"
+    )
 }
