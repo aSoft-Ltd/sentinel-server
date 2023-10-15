@@ -32,10 +32,10 @@ kotlin {
 }
 
 configure<DockateExtension> {
-    val base = "/app/root"
+    val base = "app/root"
 
     environments("Testing", "Development", "Staging", "Production") { env ->
-        file("$base/config.toml") {
+        file("/$base/config.toml") {
             logging(level = "debug") {
                 console(format = if (env in listOf("Testing", "Development")) "simple" else "json")
             }
@@ -50,6 +50,7 @@ configure<DockateExtension> {
         }
         copy("bin", "/app/bin")
         copy("lib", "/app/lib")
+        copy("$base/config.toml","/$base/config.toml")
         volume("/app/root")
         cmd("/app/bin/$name")
     }
