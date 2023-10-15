@@ -24,8 +24,8 @@ kotlin {
             dependencies {
                 implementation(ktor.server.cio)
                 implementation(ktor.server.cors)
-//                implementation(libs.lexi.config)
-//                implementation(projects.sentinelRegistrationServiceSdk)
+                implementation(libs.lexi.config)
+                implementation(projects.sentinelRegistrationServiceSdk)
             }
         }
     }
@@ -37,7 +37,8 @@ configure<DockateExtension> {
     environments("Testing", "Development", "Staging", "Production") { env ->
         file("/$base/config.toml") {
             logging(level = "debug") {
-                console(format = if (env in listOf("Testing", "Development")) "simple" else "json")
+//                console(format = if (env in listOf("Testing", "Development")) "simple" else "json")
+                console(format = "json")
             }
         }
     }
@@ -50,7 +51,7 @@ configure<DockateExtension> {
         }
         copy("bin", "/app/bin")
         copy("lib", "/app/lib")
-        copy("$base/config.toml","/$base/config.toml")
+        copy("$base/config.toml", "/$base/config.toml")
         volume("/app/root")
         cmd("/app/bin/$name")
     }
@@ -60,22 +61,15 @@ configure<DockateExtension> {
 
         val (database, root) = volumes("$name-database", "$name-root")
 
-        val mongo = service(name = "mongo", image = "mongo:latest") {
-            restart("always")
-            port(27017, 2012)
-            environment(
-                "MONGO_INITDB_ROOT_USERNAME" to "root",
-                "MONGO_INITDB_ROOT_PASSWORD" to "pass"
-            )
+        val mng = mongo(username = "root", password = "pass", port = 8079) {
             volume(database to "/data/db")
         }
 
         service(name = "app", image = app) {
             restart("always")
-            port(80, 8080)
+            port(8080, 8080)
             volume(root to "/app/root")
-            if (it.name == "Staging") port(82, 8080)
-            dependsOn(mongo)
+            dependsOn(mng)
         }
     }
 

@@ -1,40 +1,38 @@
 package sentinel
 
-//import com.mongodb.kotlin.client.coroutine.MongoClient
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.cio.*
-import io.ktor.server.engine.*
-import io.ktor.server.plugins.cors.routing.*
-import io.ktor.server.response.respondText
-import io.ktor.server.routing.*
+import com.mongodb.kotlin.client.coroutine.MongoClient
+import io.ktor.http.HttpMethod
+import io.ktor.server.application.install
+import io.ktor.server.cio.CIO
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.routing.routing
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-//import kotlinx.serialization.json.Json
-//import krono.SystemClock
-//import lexi.ConsoleAppender
-//import lexi.Logger
-//import raven.AddressInfo
-//import raven.LocalMemoryMailbox
-//import raven.MockMailer
-//import raven.MockMailerConfig
+import kotlinx.serialization.json.Json
+import raven.AddressInfo
+import raven.LocalMemoryMailbox
+import raven.MockMailer
+import raven.MockMailerConfig
 
 fun main() {
-//    val scope = CoroutineScope(SupervisorJob())
-//    val client = MongoClient.create("mongodb://root:pass@mongo:27017/")
-//    val db = client.getDatabase("test-trial")
-//    val clock = SystemClock()
-//    val mailer = MockMailer(MockMailerConfig(box = LocalMemoryMailbox()))
-//    val email = RegistrationEmailConfig(
-//        address = AddressInfo(email = "registration@test.com", name = "Tester"),
-//        subject = "Please Verify Your Email",
-//        template = "Hi {{name}}, here is your token {{token}}"
-//    )
-//    val logger = Logger(ConsoleAppender())
-//    val config = RegistrationServiceFlixConfig(scope, db, clock, mailer, logger, email)
-//    val service = RegistrationServiceFlix(config)
-//    val endpoint = RegistrationEndpoint("/api/v1")
-//    val json = Json {}
+    val scope = CoroutineScope(SupervisorJob())
+    val client = MongoClient.create("mongodb://root:pass@mongo:27017/")
+    val db = client.getDatabase("test-trial")
+    val mailer = MockMailer(MockMailerConfig(box = LocalMemoryMailbox()))
+    val service = SentinelAppConfiguration.parse(File("/app/root/config.toml")).toService(
+        scope = scope,
+        db = db,
+        mailer = mailer,
+        email = RegistrationEmailConfig(
+            address = AddressInfo(email = "registration@test.com", name = "Tester"),
+            subject = "Please Verify Your Email",
+            template = "Hi {{name}}, here is your token {{token}}"
+        )
+    )
+    val endpoint = RegistrationEndpoint("/api/v1")
+    val json = Json {}
 
     embeddedServer(CIO, port = 8080) {
         install(CORS) {
@@ -45,10 +43,7 @@ fun main() {
             allowMethod(HttpMethod.Delete)
         }
         routing {
-            get("/works") {
-                call.respondText("works")
-            }
-//            installRegistration(service = service, endpoint, json)
+            installRegistration(service = service.registration, endpoint, json)
         }
     }.start(true)
 }

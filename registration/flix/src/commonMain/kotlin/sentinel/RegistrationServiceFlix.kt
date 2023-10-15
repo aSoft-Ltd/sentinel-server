@@ -45,7 +45,10 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixConfig)
         if (candidate != null) when (candidate.verified) {
             true -> UserAlreadyCompletedRegistrationException(params.email)
             false -> UserAlreadyBeganRegistrationException(params.email)
-        }.also { logger.error(action.failed, it) }
+        }.also {
+            logger.error(action.failed, it)
+            throw it
+        }
         col.insertOne(params.toDao(config.clock))
         logger.info(action.passed)
         params
@@ -53,6 +56,7 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixConfig)
 
     override fun sendVerificationLink(params: SendVerificationLinkParams): Later<String> = config.scope.later {
         val action = actions.sendVerificationLink(params.email)
+        logger.info(action.begin)
         val email = params.email
         val link = params.link
         val candidates = col.find(eq(RegistrationCandidateDao::email.name, email)).toList()
@@ -90,6 +94,7 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixConfig)
 
     override fun verify(params: VerificationParams): Later<VerificationParams> = config.scope.later {
         val action = actions.verify(params.email)
+        logger.info(action.begin)
         val candidate = candidateWith(params.email) ?: throw UserDidNotBeginRegistrationException(params.email).also { logger.error(action.failed, it) }
         if (candidate.verified) {
             throw UserAlreadyCompletedRegistrationException(params.email).also { logger.error(action.failed, it) }
@@ -106,6 +111,7 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixConfig)
 
     override fun createUserAccount(params: UserAccountParams): Later<UserAccountParams> = config.scope.later {
         val action = actions.createAccount(params.loginId)
+        logger.info(action.begin)
         val candidate = candidateWith(params.loginId) ?: throw UserDidNotBeginRegistrationException(params.loginId).also { logger.error(action.failed, it) }
         val tokens = candidate.tokens.map { it.text }
         if (!tokens.contains(params.registrationToken)) {
