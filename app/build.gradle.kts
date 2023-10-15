@@ -86,11 +86,4 @@ configure<DockateExtension> {
         user = "root",
         pass = "bitframe"
     )
-
-    registry(
-        name = "asoft",
-        url = "http://65.21.254.230:1030",
-        user = "root",
-        pass = "bitframe"
-    )
 }
