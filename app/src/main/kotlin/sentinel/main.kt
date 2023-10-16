@@ -12,26 +12,24 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import raven.AddressInfo
-import raven.LocalMemoryMailbox
-import raven.MockMailer
-import raven.MockMailerConfig
+import raven.FlixServerMailer
+import raven.installMailer
 
 fun main() {
     val scope = CoroutineScope(SupervisorJob())
     val client = MongoClient.create("mongodb://root:pass@mongo:27017/")
     val db = client.getDatabase("test-trial")
-    val mailer = MockMailer(MockMailerConfig(box = LocalMemoryMailbox()))
-    val service = SentinelAppConfiguration.parse(File("/app/root/config.toml")).toService(
+    val config = SentinelAppConfiguration.parse(File("/app/root/config.toml")).toOptions(
         scope = scope,
         db = db,
-        mailer = mailer,
         email = RegistrationEmailConfig(
             address = AddressInfo(email = "registration@test.com", name = "Tester"),
             subject = "Please Verify Your Email",
             template = "Hi {{name}}, here is your token {{token}}"
         )
     )
-    val endpoint = RegistrationEndpoint("/api/v1")
+    val service = SentinelService(config)
+    val endpoint = SentinelEndpoint("/api/v1")
     val json = Json {}
 
     embeddedServer(CIO, port = 8080) {
@@ -43,7 +41,10 @@ fun main() {
             allowMethod(HttpMethod.Delete)
         }
         routing {
-            installRegistration(service = service.registration, endpoint, json)
+            installRegistration(service = service.registration, endpoint.registration, json)
+            when (val mailer = config.mailer) {
+                is FlixServerMailer -> installMailer(mailer, endpoint = endpoint.mailer)
+            }
         }
     }.start(true)
 }

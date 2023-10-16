@@ -12,10 +12,12 @@ import net.peanuuutz.tomlkt.Toml
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import raven.Mailer
+import raven.MailingConfiguration
+import raven.MockMailer
 
 @Serializable
 class SentinelAppConfiguration(
-    val logging: LoggingConfiguration?
+    val logging: LoggingConfiguration?, val mail: MailingConfiguration?
 ) {
     companion object {
         fun parse(file: File): SentinelAppConfiguration {
@@ -29,15 +31,19 @@ class SentinelAppConfiguration(
     fun toOptions(
         scope: CoroutineScope,
         db: MongoDatabase,
-        mailer: Mailer,
         email: RegistrationEmailConfig,
     ): SentinelConfig {
         val logger = logging?.toLogger(FileSystem.SYSTEM, Clock.System, "/app/root/logs".toPath()) ?: run {
-            println("[WARNING] You have not cofigured any logger")
+            println("[WARNING] You have not configured any logger")
             Logger()
+        }
+        val mailer = mail?.toMailer(scope) ?: run {
+            println("[WARNING] Defaulting to mock mailing service because you have not configured a mailer")
+            MockMailer()
         }
         return SentinelConfig(
             logger = logger,
+            mailer = mailer,
             registration = RegistrationServiceFlixConfig(scope, db, SystemClock(), mailer, logger, email)
         )
     }
@@ -45,9 +51,6 @@ class SentinelAppConfiguration(
     fun toService(
         scope: CoroutineScope,
         db: MongoDatabase,
-        mailer: Mailer,
         email: RegistrationEmailConfig,
-    ) = SentinelService(
-        registration = RegistrationServiceFlix(toOptions(scope, db, mailer, email).registration)
-    )
+    ) = SentinelService(toOptions(scope, db, email))
 }

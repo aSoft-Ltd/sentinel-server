@@ -25,6 +25,7 @@ kotlin {
                 implementation(ktor.server.cio)
                 implementation(ktor.server.cors)
                 implementation(libs.lexi.config)
+                implementation(libs.raven.config)
                 implementation(projects.sentinelRegistrationServiceSdk)
             }
         }
@@ -34,12 +35,13 @@ kotlin {
 configure<DockateExtension> {
     val base = "app/root"
 
-    environments("Testing", "Development", "Staging", "Production") { env ->
+    environments("Testing") { env ->
         file("/$base/config.toml") {
             logging(level = "debug") {
-//                console(format = if (env in listOf("Testing", "Development")) "simple" else "json")
                 console(format = "json")
             }
+
+            mail(sender = "flix")
         }
     }
 
