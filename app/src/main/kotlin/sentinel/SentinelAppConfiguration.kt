@@ -11,13 +11,15 @@ import lexi.LoggingConfiguration
 import net.peanuuutz.tomlkt.Toml
 import okio.FileSystem
 import okio.Path.Companion.toPath
-import raven.Mailer
 import raven.MailingConfiguration
 import raven.MockMailer
 
 @Serializable
 class SentinelAppConfiguration(
-    val logging: LoggingConfiguration?, val mail: MailingConfiguration?
+    val logging: LoggingConfiguration?,
+    val mail: MailingConfiguration?,
+    val registration: RegistrationServiceConfiguration?,
+    val authentication: AuthenticationServiceConfiguration?
 ) {
     companion object {
         fun parse(file: File): SentinelAppConfiguration {
@@ -31,8 +33,7 @@ class SentinelAppConfiguration(
     fun toOptions(
         scope: CoroutineScope,
         db: MongoDatabase,
-        email: RegistrationEmailConfig,
-    ): SentinelConfig {
+    ): SentinelServiceOptions {
         val logger = logging?.toLogger(FileSystem.SYSTEM, Clock.System, "/app/root/logs".toPath()) ?: run {
             println("[WARNING] You have not configured any logger")
             Logger()
@@ -41,16 +42,22 @@ class SentinelAppConfiguration(
             println("[WARNING] Defaulting to mock mailing service because you have not configured a mailer")
             MockMailer()
         }
-        return SentinelConfig(
+
+        val verification = registration?.toOptions() ?: run {
+            throw IllegalArgumentException("Missing registration verification configuration")
+        }
+
+        val recovery = authentication?.toOptions() ?: run {
+            throw IllegalArgumentException("Missing authentication recovery configuration")
+        }
+
+        return SentinelServiceOptions(
+            scope = scope,
             logger = logger,
             mailer = mailer,
-            registration = RegistrationServiceFlixConfig(scope, db, SystemClock(), mailer, logger, email)
+            db = db,
+            verification = verification,
+            recovery = recovery
         )
     }
-
-    fun toService(
-        scope: CoroutineScope,
-        db: MongoDatabase,
-        email: RegistrationEmailConfig,
-    ) = SentinelService(toOptions(scope, db, email))
 }

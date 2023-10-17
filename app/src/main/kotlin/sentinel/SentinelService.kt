@@ -1,7 +1,8 @@
 package sentinel
 
 class SentinelService(
-    val config: SentinelConfig
+    val options: SentinelServiceOptions
 ) {
-    val registration by lazy { RegistrationServiceFlix(config.registration) }
+    val registration by lazy { RegistrationServiceFlix(options.registration) }
+    val authentication by lazy { AuthenticationServiceFlix(options.authentication) }
 }

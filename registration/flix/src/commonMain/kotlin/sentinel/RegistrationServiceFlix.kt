@@ -26,7 +26,7 @@ import sentinel.transformers.toDao
 import sentinel.transformers.toPersonDao
 import yeti.Template
 
-class RegistrationServiceFlix(private val config: RegistrationServiceFlixConfig) : RegistrationService {
+class RegistrationServiceFlix(private val config: RegistrationServiceFlixOptions) : RegistrationService {
 
     private val col = config.db.getCollection<RegistrationCandidateDao>(RegistrationCandidateDao.collection)
     private val mailer = config.mailer
@@ -76,14 +76,14 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixConfig)
             }
             val sendTask = async {
                 val message = EmailDraft(
-                    subject = config.email.subject,
-                    body = Template(config.email.template).compile(
+                    subject = config.verification.subject,
+                    body = Template(config.verification.template).compile(
                         "email" to email,
                         "name" to candidate.name,
                         "token" to token
                     )
                 )
-                mailer.send(draft = message, from = config.email.address, to = candidate.toAddressInfo()).await()
+                mailer.send(draft = message, from = config.verification.address, to = candidate.toAddressInfo()).await()
             }
             updateTask.await()
             sendTask.await()

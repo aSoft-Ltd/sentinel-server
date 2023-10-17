@@ -5,12 +5,13 @@ import kotlinx.coroutines.CoroutineScope
 import krono.Clock
 import lexi.Logger
 import raven.Mailer
+import raven.TemplatedEmailOptions
 
-class RegistrationServiceFlixConfig(
+class RegistrationServiceFlixOptions(
     val scope: CoroutineScope,
     val db: MongoDatabase,
     val clock: Clock,
     val mailer: Mailer,
     val logger: Logger,
-    val email: RegistrationEmailConfig
+    val verification: TemplatedEmailOptions
 )

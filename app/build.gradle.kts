@@ -27,21 +27,34 @@ kotlin {
                 implementation(libs.lexi.config)
                 implementation(libs.raven.config)
                 implementation(projects.sentinelRegistrationServiceSdk)
+                implementation(projects.sentinelEnterpriseAuthenticationServiceSdk)
             }
         }
     }
 }
 
 configure<DockateExtension> {
-    val base = "app/root"
-
     environments("Testing") { env ->
-        file("/$base/config.toml") {
+        file("/config.toml") {
             logging(level = "debug") {
                 console(format = "json")
             }
 
             mail(sender = "flix")
+
+            verification(
+                name = "Sentinel Reception",
+                address = "reception@sentinel.com",
+                subject = "Sentinel Email Verification",
+                template = "/app/root/templates/registration/verification.txt"
+            )
+
+            recovery(
+                name = "Sentinel Security",
+                address = "security@sentinel.com",
+                subject = "Sentinel Account Recovery",
+                template = "/app/root/templates/authentication/recovery.txt"
+            )
         }
     }
 
@@ -51,10 +64,11 @@ configure<DockateExtension> {
         source(layout.buildDirectory.dir("install/${project.name}")) {
             dependsOn(tasks.named("installDist"))
         }
+        source(layout.projectDirectory.dir("src/main/resources"))
         copy("bin", "/app/bin")
         copy("lib", "/app/lib")
-        copy("$base/config.toml", "/$base/config.toml")
-        volume("/app/root")
+        copy("templates","/app/root/templates")
+        copy("config.toml", "/app/root/config.toml")
         cmd("/app/bin/$name")
     }
 
@@ -74,12 +88,4 @@ configure<DockateExtension> {
             dependsOn(mng)
         }
     }
-
-    // must come after compose block
-    registry(
-        name = "picortex",
-        url = "http://65.21.254.230:1030",
-        user = "root",
-        pass = "bitframe"
-    )
 }

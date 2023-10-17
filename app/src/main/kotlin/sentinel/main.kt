@@ -11,7 +11,6 @@ import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
-import raven.AddressInfo
 import raven.FlixServerMailer
 import raven.installMailer
 
@@ -19,16 +18,11 @@ fun main() {
     val scope = CoroutineScope(SupervisorJob())
     val client = MongoClient.create("mongodb://root:pass@mongo:27017/")
     val db = client.getDatabase("test-trial")
-    val config = SentinelAppConfiguration.parse(File("/app/root/config.toml")).toOptions(
+    val options = SentinelAppConfiguration.parse(File("/app/root/config.toml")).toOptions(
         scope = scope,
         db = db,
-        email = RegistrationEmailConfig(
-            address = AddressInfo(email = "registration@test.com", name = "Tester"),
-            subject = "Please Verify Your Email",
-            template = "Hi {{name}}, here is your token {{token}}"
-        )
     )
-    val service = SentinelService(config)
+    val service = SentinelService(options)
     val endpoint = SentinelEndpoint("/api/v1")
     val json = Json {}
 
@@ -41,10 +35,11 @@ fun main() {
             allowMethod(HttpMethod.Delete)
         }
         routing {
-            installRegistration(service = service.registration, endpoint.registration, json)
-            when (val mailer = config.mailer) {
+            when (val mailer = options.mailer) {
                 is FlixServerMailer -> installMailer(mailer, endpoint = endpoint.mailer)
             }
+            installRegistration(service = service.registration, endpoint.registration, json)
+            installAuthentication(service = service.authentication, endpoint.authentication, json)
         }
     }.start(true)
 }

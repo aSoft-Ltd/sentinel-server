@@ -15,7 +15,7 @@ kotlin {
                 api(projects.sentinelEnterpriseAuthenticationServiceCore)
                 api(projects.sentinelReceptionServiceFlix)
                 api(libs.kase.response.core)
-                api(libs.raven.api)
+                api(libs.raven.config)
                 api(libs.lexi.api)
             }
         }

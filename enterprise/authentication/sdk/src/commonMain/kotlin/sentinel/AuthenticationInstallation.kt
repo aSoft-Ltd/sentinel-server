@@ -8,7 +8,7 @@ import koncurrent.later.await
 import kotlinx.serialization.StringFormat
 import sentinel.params.SignInParams
 
-fun Routing.installAuthentication(service: AuthenticationApi, endpoint: AuthenticationEndpoint, codec: StringFormat) {
+fun Routing.installAuthentication(service: AuthenticationService, endpoint: AuthenticationEndpoint, codec: StringFormat) {
     post(endpoint.signIn(), codec) {
         val params = codec.decodeFromString(SignInParams.serializer(), call.receiveText())
         service.signIn(params).await()
