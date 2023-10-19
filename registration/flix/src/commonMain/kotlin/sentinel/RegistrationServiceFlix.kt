@@ -80,7 +80,8 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixOptions
                     body = Template(config.verification.template).compile(
                         "email" to email,
                         "name" to candidate.name,
-                        "token" to token
+                        "token" to token,
+                        "link" to params.link
                     )
                 )
                 mailer.send(draft = message, from = config.verification.address, to = candidate.toAddressInfo()).await()

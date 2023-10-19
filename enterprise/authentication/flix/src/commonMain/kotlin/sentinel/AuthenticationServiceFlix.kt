@@ -17,6 +17,7 @@ import sentinel.daos.SessionDao
 import sentinel.exceptions.InvalidCredentialsAuthenticationException
 import sentinel.exceptions.UserNotRegisteredForAuthenticationException
 import sentinel.params.PasswordResetParams
+import sentinel.params.SendPasswordResetParams
 import sentinel.params.SignInParams
 import sentinel.transformers.toCorporate
 import sentinel.transformers.toIndividual
@@ -40,7 +41,7 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
         val company = loadCompanyFor(person).toCorporate()
 
         val session = SessionDao(
-            token = ObjectId.get().toHexString() ?: throw RuntimeException("Failed to create a session token"),
+            token = ObjectId.get().toHexString()?.chunked(4)?.joinToString("-") ?: throw RuntimeException("Failed to create a session token"),
             user = ObjectId(user.uid),
             company = ObjectId(company.uid)
         )
@@ -96,7 +97,8 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
         ).also { logger.info(action.passed) }
     }
 
-    override fun sendPasswordResetLink(email: String): Later<String> = options.scope.later {
+    override fun sendPasswordResetLink(params: SendPasswordResetParams): Later<String> = options.scope.later {
+        val email = params.email
         val action = actions.sendPasswordResetLink(email)
         logger.info(action.begin)
         val person = col.find(eq(PersonalAccountDao::email.name, email)).toList().firstOrNull() ?: run {
@@ -120,7 +122,8 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
                 body = Template(options.email.template).compile(
                     "email" to email,
                     "name" to person.name,
-                    "token" to token.toHexString().chunked(4).joinToString("-")
+                    "token" to token.toHexString().chunked(4).joinToString("-"),
+                    "link" to params.link
                 )
             )
             mailer.send(draft = message, from = options.email.address, to = AddressInfo(email = email, name = person.name)).await()

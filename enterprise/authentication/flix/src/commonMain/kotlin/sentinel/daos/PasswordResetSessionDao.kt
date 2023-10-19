@@ -1,6 +1,5 @@
 package sentinel.daos
 
-import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.types.ObjectId
 

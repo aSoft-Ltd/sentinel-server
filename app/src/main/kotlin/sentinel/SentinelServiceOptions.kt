@@ -20,6 +20,6 @@ class SentinelServiceOptions(
         RegistrationServiceFlixOptions(scope, db, clock, mailer, logger, verification)
     }
     val authentication by lazy {
-        AuthenticationServiceFlixOptions(scope, db, clock, mailer, logger, recovery)
+        AuthenticationServiceFlixOptions(scope, db, mailer, logger, recovery)
     }
 }

@@ -58,7 +58,7 @@ configure<DockateExtension> {
         }
     }
 
-    val app = image(name = "server") {
+    val app = image(name = "sentinel") {
         from(OPEN_JDK_22_JDK_SLIM)
         expose(port = 8080)
         source(layout.buildDirectory.dir("install/${project.name}")) {

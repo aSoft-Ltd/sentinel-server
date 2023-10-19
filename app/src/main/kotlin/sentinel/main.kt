@@ -34,6 +34,7 @@ fun main() {
             allowMethod(HttpMethod.Patch)
             allowMethod(HttpMethod.Delete)
         }
+
         routing {
             when (val mailer = options.mailer) {
                 is FlixServerMailer -> installMailer(mailer, endpoint = endpoint.mailer)
