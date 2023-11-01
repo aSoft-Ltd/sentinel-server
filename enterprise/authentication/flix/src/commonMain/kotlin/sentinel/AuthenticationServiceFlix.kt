@@ -29,12 +29,12 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
     private val logger by options.logger
     private val actions by lazy { AuthenticationActionMessage() }
     override fun signIn(params: SignInParams): Later<UserSession> = options.scope.later {
-        val action = actions.signIn(params.email)
+        val tracer = logger.trace(actions.signIn(params.email))
         val person = col.find(eq(PersonalAccountDao::email.name, params.email)).toList().firstOrNull() ?: run {
-            throw UserNotRegisteredForAuthenticationException(params.email).also { logger.error(action.failed, it) }
+            throw UserNotRegisteredForAuthenticationException(params.email).also { tracer.failed(it) }
         }
         if (person.password != params.password) {
-            throw InvalidCredentialsAuthenticationException().also { logger.error(action.failed, it) }
+            throw InvalidCredentialsAuthenticationException().also { tracer.failed(it) }
         }
 
         val user = person.toIndividual()
@@ -55,7 +55,7 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
             currency = Currency.TZS,
             timezone = "UTC",
             salesTax = 0
-        ).also { logger.info(action.passed) }
+        ).also { tracer.passed() }
     }
 
     private suspend fun loadCompanyFor(user: PersonalAccountDao): BusinessAccountDao {
@@ -72,19 +72,19 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
     }
 
     override fun session(token: String): Later<UserSession> = options.scope.later {
-        val action = actions.session()
+        val tracer = logger.trace(actions.session())
         val sessionCollection = options.db.getCollection<SessionDao>(SessionDao.collection)
         val session = sessionCollection.find<SessionDao>(eq(SessionDao::token.name, token)).firstOrNull() ?: run {
-            throw InvalidCredentialsAuthenticationException().also { logger.error(action.failed, it) }
+            throw InvalidCredentialsAuthenticationException().also { tracer.failed(it) }
         }
 
         val user = col.find(eq("_id", session.user)).firstOrNull()?.toIndividual() ?: run {
-            throw IllegalStateException("somehow a user with a session is not registered").also { logger.error(action.failed, it) }
+            throw IllegalStateException("somehow a user with a session is not registered").also { tracer.failed(it) }
         }
 
         val companyCollection = options.db.getCollection<BusinessAccountDao>(BusinessAccountDao.collection)
         val company = companyCollection.find(eq("_id", session.company)).firstOrNull()?.toCorporate() ?: run {
-            throw IllegalStateException("somehow a company with a session is not registered").also { logger.error(action.failed, it) }
+            throw IllegalStateException("somehow a company with a session is not registered").also { tracer.failed(it) }
         }
 
         UserSession(
@@ -94,15 +94,14 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
             currency = Currency.TZS,
             timezone = "UTC",
             salesTax = 0
-        ).also { logger.info(action.passed) }
+        ).also { tracer.passed() }
     }
 
     override fun sendPasswordResetLink(params: SendPasswordResetParams): Later<String> = options.scope.later {
         val email = params.email
-        val action = actions.sendPasswordResetLink(email)
-        logger.info(action.begin)
+        val tracer = logger.trace(actions.sendPasswordResetLink(email))
         val person = col.find(eq(PersonalAccountDao::email.name, email)).toList().firstOrNull() ?: run {
-            throw UserNotRegisteredForAuthenticationException(email).also { logger.error(action.failed, it) }
+            throw UserNotRegisteredForAuthenticationException(email).also { tracer.failed(it) }
         }
 
         val token = ObjectId.get()
@@ -130,23 +129,23 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
         }
 
         insert.await(); send.await()
-        logger.info(action.passed)
+        tracer.passed()
         email
     }
 
     override fun resetPassword(params: PasswordResetParams): Later<PasswordResetParams> = options.scope.later {
-        val action = actions.resetPassword(params.passwordResetToken)
+        val log = logger.trace(actions.resetPassword(params.passwordResetToken))
         val token = params.passwordResetToken?.replace("-", "") ?: run {
-            throw InvalidCredentialsAuthenticationException().also { logger.error(action.failed, it) }
+            throw InvalidCredentialsAuthenticationException().also { log.failed(it) }
         }
         val resetCollection = options.db.getCollection<PasswordResetSessionDao>(PasswordResetSessionDao.collection)
         val session = resetCollection.find(eq(PasswordResetSessionDao::token.name, ObjectId(token))).firstOrNull() ?: run {
-            throw InvalidCredentialsAuthenticationException().also { logger.error(action.failed, it) }
+            throw InvalidCredentialsAuthenticationException().also { log.failed(it) }
         }
 
         val peopleCollection = options.db.getCollection<PersonalAccountDao>(PersonalAccountDao.collection)
         peopleCollection.updateOne(eq("_id", session.person), Updates.set(PersonalAccountDao::password.name, params.password))
-        logger.info(action.passed)
+        log.passed()
         params
     }
 }

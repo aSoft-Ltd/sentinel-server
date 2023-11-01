@@ -39,28 +39,25 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixOptions
     }
 
     override fun signUp(params: SignUpParams) = config.scope.later {
-        val action = actions.signUp(params.email)
-        logger.info(action.begin)
+        val tracer = logger.trace(actions.signUp(params.email))
         val candidate = candidateWith(email = params.email)
-        if (candidate != null) when (candidate.verified) {
+        if (candidate != null) throw when (candidate.verified) {
             true -> UserAlreadyCompletedRegistrationException(params.email)
             false -> UserAlreadyBeganRegistrationException(params.email)
         }.also {
-            logger.error(action.failed, it)
-            throw it
+            tracer.failed(it)
         }
         col.insertOne(params.toDao(config.clock))
-        logger.info(action.passed)
+        tracer.passed()
         params
     }
 
     override fun sendVerificationLink(params: SendVerificationLinkParams): Later<String> = config.scope.later {
-        val action = actions.sendVerificationLink(params.email)
-        logger.info(action.begin)
+        val tracer = logger.trace(actions.sendVerificationLink(params.email))
         val email = params.email
         val link = params.link
         val candidates = col.find(eq(RegistrationCandidateDao::email.name, email)).toList()
-        if (candidates.isEmpty()) throw UserDidNotBeginRegistrationException(email).also { logger.error(action.failed, it) }
+        if (candidates.isEmpty()) throw UserDidNotBeginRegistrationException(email).also { tracer.failed(it) }
         val candidate = candidates.first()
         val token = ObjectId().toHexString().chunked(4).joinToString("-")
         coroutineScope {
@@ -89,40 +86,38 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixOptions
             updateTask.await()
             sendTask.await()
         }
-        logger.info(action.passed)
+        tracer.passed()
         params.email
     }
 
     override fun verify(params: VerificationParams): Later<VerificationParams> = config.scope.later {
-        val action = actions.verify(params.email)
-        logger.info(action.begin)
-        val candidate = candidateWith(params.email) ?: throw UserDidNotBeginRegistrationException(params.email).also { logger.error(action.failed, it) }
+        val tracer = logger.trace(actions.verify(params.email))
+        val candidate = candidateWith(params.email) ?: throw UserDidNotBeginRegistrationException(params.email).also { tracer.failed(it) }
         if (candidate.verified) {
-            throw UserAlreadyCompletedRegistrationException(params.email).also { logger.error(action.failed, it) }
+            throw UserAlreadyCompletedRegistrationException(params.email).also { tracer.failed(it) }
         }
         if (candidate.tokens.last().text != params.token) {
-            throw InvalidTokenForRegistrationException(params.token).also { logger.error(action.failed, it) }
+            throw InvalidTokenForRegistrationException(params.token).also { tracer.failed(it) }
         }
         val query = eq(RegistrationCandidateDao::email.name, params.email)
         val update = set(RegistrationCandidateDao::verified.name, true)
         col.updateOne(query, update)
-        logger.info(action.passed)
+        tracer.passed()
         params
     }
 
     override fun createUserAccount(params: UserAccountParams): Later<UserAccountParams> = config.scope.later {
-        val action = actions.createAccount(params.loginId)
-        logger.info(action.begin)
-        val candidate = candidateWith(params.loginId) ?: throw UserDidNotBeginRegistrationException(params.loginId).also { logger.error(action.failed, it) }
+        val tracer = logger.trace(actions.createAccount(params.loginId))
+        val candidate = candidateWith(params.loginId) ?: throw UserDidNotBeginRegistrationException(params.loginId).also { tracer.failed(it) }
         val tokens = candidate.tokens.map { it.text }
         if (!tokens.contains(params.registrationToken)) {
-            throw InvalidTokenForRegistrationException(params.registrationToken).also { logger.error(action.failed, it) }
+            throw InvalidTokenForRegistrationException(params.registrationToken).also { tracer.failed(it) }
         }
 
         val personalCollection = config.db.getCollection<PersonalAccountDao>(PersonalAccountDao.collection)
         val people = personalCollection.find(eq(PersonalAccountDao::email.name, params.loginId)).toList()
         if (people.isNotEmpty()) {
-            throw UserAlreadyCompletedRegistrationException(params.loginId).also { logger.error(action.failed, it) }
+            throw UserAlreadyCompletedRegistrationException(params.loginId).also { tracer.failed(it) }
         }
 
         val person = personalCollection.insertOne(params.toPersonDao(candidate.uid!!, candidate.name))
@@ -136,7 +131,7 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixOptions
             person = person.insertedId!!.asObjectId().value
         )
         personBusiness.insertOne(pbr)
-        logger.info(action.passed)
+        tracer.passed()
         params
     }
 }
