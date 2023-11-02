@@ -7,6 +7,7 @@ import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import krono.SystemClock
 import lexi.Logger
+import lexi.LoggerFactory
 import lexi.LoggingConfiguration
 import net.peanuuutz.tomlkt.Toml
 import okio.FileSystem
@@ -36,7 +37,7 @@ class SentinelAppConfiguration(
     ): SentinelServiceOptions {
         val logger = logging?.toLogger(FileSystem.SYSTEM, Clock.System, "/app/root/logs".toPath()) ?: run {
             println("[WARNING] You have not configured any logger")
-            Logger()
+            LoggerFactory()
         }
         val mailer = mail?.toMailer(scope) ?: run {
             println("[WARNING] Defaulting to mock mailing service because you have not configured a mailer")

@@ -88,4 +88,12 @@ configure<DockateExtension> {
             dependsOn(mng)
         }
     }
+
+    registry(
+        name = "legacy",
+        url = "http://192.168.1.109:1030",
+        user = "andylamax",
+        pass = "andymamson",
+        workdir = "/testing"
+    )
 }
