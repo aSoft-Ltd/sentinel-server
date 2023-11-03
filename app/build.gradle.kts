@@ -42,7 +42,8 @@ configure<DockateExtension> {
                 console(format = "json")
             }
 
-            mail(sender = "flix")
+            mail(sender = "console")
+            mail(sender = "bus")
 
             verification(
                 name = "Sentinel Reception",

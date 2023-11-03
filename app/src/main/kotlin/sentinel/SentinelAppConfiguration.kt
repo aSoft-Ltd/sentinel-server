@@ -10,14 +10,16 @@ import lexi.LoggingConfiguration
 import net.peanuuutz.tomlkt.Toml
 import okio.FileSystem
 import okio.Path.Companion.toPath
-import raven.MailingConfiguration
-import raven.MockMailer
+import raven.ConsoleEmailSender
+import raven.MailFactoryConfiguration
+import raven.MailSenderFactory
 import raven.emailSender
+import sanity.EventBus
 
 @Serializable
 class SentinelAppConfiguration(
     val logging: LoggingConfiguration?,
-    val mail: MailingConfiguration?,
+    val mail: MailFactoryConfiguration?,
     val registration: RegistrationServiceConfiguration?,
     val authentication: AuthenticationServiceConfiguration?
 ) {
@@ -33,14 +35,17 @@ class SentinelAppConfiguration(
     fun toOptions(
         scope: CoroutineScope,
         db: MongoDatabase,
+        bus: EventBus,
     ): SentinelServiceOptions {
         val logger = logging?.toLogger(FileSystem.SYSTEM, Clock.System, "/app/root/logs".toPath()) ?: run {
             println("[WARNING] You have not configured any logger")
             LoggerFactory()
         }
-        val mailer = mail?.toMailer(scope) ?: run {
-            println("[WARNING] Defaulting to mock mailing service because you have not configured a mailer")
-            MockMailer()
+        val sender = mail?.toFactory(bus) ?: run {
+            println("[WARNING] Defaulting to a console mailing service because you have not configured a mailer")
+            val fc = MailSenderFactory()
+            fc.add(ConsoleEmailSender())
+            fc
         }
 
         val verification = registration?.toOptions() ?: run {
@@ -54,7 +59,7 @@ class SentinelAppConfiguration(
         return SentinelServiceOptions(
             scope = scope,
             logger = logger,
-            sender = emailSender {  },
+            sender = sender.build(),
             db = db,
             verification = verification,
             recovery = recovery

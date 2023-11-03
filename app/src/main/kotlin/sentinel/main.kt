@@ -22,6 +22,7 @@ fun main() {
     val options = SentinelAppConfiguration.parse(File("/app/root/config.toml")).toOptions(
         scope = scope,
         db = db,
+        bus = bus,
     )
     val service = SentinelService(options)
     val endpoint = SentinelEndpoint("/api/v1")
