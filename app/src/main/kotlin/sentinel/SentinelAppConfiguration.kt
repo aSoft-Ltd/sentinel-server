@@ -5,8 +5,6 @@ import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
-import krono.SystemClock
-import lexi.Logger
 import lexi.LoggerFactory
 import lexi.LoggingConfiguration
 import net.peanuuutz.tomlkt.Toml
@@ -14,6 +12,7 @@ import okio.FileSystem
 import okio.Path.Companion.toPath
 import raven.MailingConfiguration
 import raven.MockMailer
+import raven.emailSender
 
 @Serializable
 class SentinelAppConfiguration(
@@ -55,7 +54,7 @@ class SentinelAppConfiguration(
         return SentinelServiceOptions(
             scope = scope,
             logger = logger,
-            mailer = mailer,
+            sender = emailSender {  },
             db = db,
             verification = verification,
             recovery = recovery

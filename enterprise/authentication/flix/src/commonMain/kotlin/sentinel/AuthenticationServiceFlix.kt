@@ -10,8 +10,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import org.bson.types.ObjectId
-import raven.AddressInfo
-import raven.EmailDraft
+import raven.Address
+import raven.SendEmailParams
 import sentinel.daos.PasswordResetSessionDao
 import sentinel.daos.SessionDao
 import sentinel.exceptions.InvalidCredentialsAuthenticationException
@@ -25,7 +25,7 @@ import yeti.Template
 
 class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOptions) : AuthenticationService {
     private val col = options.db.getCollection<PersonalAccountDao>(PersonalAccountDao.collection)
-    private val mailer = options.mailer
+    private val sender = options.sender
     private val logger by options.logger
     private val actions by lazy { AuthenticationActionMessage() }
     override fun signIn(params: SignInParams): Later<UserSession> = options.scope.later {
@@ -116,7 +116,9 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
         }
 
         val send = async {
-            val message = EmailDraft(
+            val sep = SendEmailParams(
+                from = options.email.address,
+                to = Address(email = email, name = person.name),
                 subject = options.email.subject,
                 body = Template(options.email.template).compile(
                     "email" to email,
@@ -125,7 +127,7 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
                     "link" to params.link
                 )
             )
-            mailer.send(draft = message, from = options.email.address, to = AddressInfo(email = email, name = person.name)).await()
+            sender.send(sep).await()
         }
 
         insert.await(); send.await()

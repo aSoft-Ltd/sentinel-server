@@ -26,6 +26,8 @@ kotlin {
                 implementation(ktor.server.cors)
                 implementation(libs.lexi.config)
                 implementation(libs.raven.config)
+                implementation(libs.sanity.flix)
+                implementation(libs.sanity.local)
                 implementation(projects.sentinelRegistrationServiceSdk)
                 implementation(projects.sentinelEnterpriseAuthenticationServiceSdk)
             }

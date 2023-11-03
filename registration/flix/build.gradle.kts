@@ -17,6 +17,7 @@ kotlin {
                 api(libs.sentinel.registration.flix)
                 api(libs.kase.response.core)
                 api(libs.raven.config)
+                api(libs.sanity.core)
                 api(libs.lexi.api)
             }
         }

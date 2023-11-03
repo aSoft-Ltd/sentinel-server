@@ -19,7 +19,8 @@ listOf(
     "lexi", "neat", "kash-api", "geo-api", "kase", "keep",
     "kronecker", "epsilon-api", "krono-core", "hormone", "identifier-api",
     "kommerce", "kollections", "koncurrent", "kommander", "cabinet-api",
-    "sentinel-core", "raven-core", "raven-client", "raven-server", "cinematic", "yeti"
+    "sentinel-core", "raven-core", "raven-client", "raven-server", "cinematic", "yeti",
+    "sanity", "kiota"
 ).forEach { includeBuild("../$it") }
 
 rootProject.name = "sentinel-server"

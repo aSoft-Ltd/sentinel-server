@@ -11,11 +11,12 @@ import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
-import raven.FlixServerMailer
-import raven.installMailer
+import sanity.LocalBus
+import sanity.installSanity
 
 fun main() {
     val scope = CoroutineScope(SupervisorJob())
+    val bus = LocalBus()
     val client = MongoClient.create("mongodb://root:pass@mongo:27017/")
     val db = client.getDatabase("test-trial")
     val options = SentinelAppConfiguration.parse(File("/app/root/config.toml")).toOptions(
@@ -36,9 +37,7 @@ fun main() {
         }
 
         routing {
-            when (val mailer = options.mailer) {
-                is FlixServerMailer -> installMailer(mailer, endpoint = endpoint.mailer)
-            }
+            installSanity(bus, endpoint.sanity)
             installRegistration(service = service.registration, endpoint.registration, json)
             installAuthentication(service = service.authentication, endpoint.authentication, json)
         }

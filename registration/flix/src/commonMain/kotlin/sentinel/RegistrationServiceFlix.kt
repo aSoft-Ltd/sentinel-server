@@ -11,7 +11,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.toList
 import krono.currentJavaLocalDateTime
 import org.bson.types.ObjectId
-import raven.EmailDraft
+import raven.SendEmailParams
 import sentinel.exceptions.InvalidTokenForRegistrationException
 import sentinel.exceptions.UserAlreadyBeganRegistrationException
 import sentinel.exceptions.UserAlreadyCompletedRegistrationException
@@ -20,7 +20,7 @@ import sentinel.params.SendVerificationLinkParams
 import sentinel.params.SignUpParams
 import sentinel.params.UserAccountParams
 import sentinel.params.VerificationParams
-import sentinel.transformers.toAddressInfo
+import sentinel.transformers.toAddress
 import sentinel.transformers.toBusinessDao
 import sentinel.transformers.toDao
 import sentinel.transformers.toPersonDao
@@ -29,7 +29,7 @@ import yeti.Template
 class RegistrationServiceFlix(private val config: RegistrationServiceFlixOptions) : RegistrationService {
 
     private val col = config.db.getCollection<RegistrationCandidateDao>(RegistrationCandidateDao.collection)
-    private val mailer = config.mailer
+    private val sender = config.sender
     private val logger by config.logger
     private val actions by lazy { RegistrationActionMessage() }
 
@@ -72,7 +72,9 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixOptions
                 col.updateOne(query, update)
             }
             val sendTask = async {
-                val message = EmailDraft(
+                val params = SendEmailParams(
+                    from = config.verification.address,
+                    to = candidate.toAddress(),
                     subject = config.verification.subject,
                     body = Template(config.verification.template).compile(
                         "email" to email,
@@ -81,7 +83,7 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixOptions
                         "link" to params.link
                     )
                 )
-                mailer.send(draft = message, from = config.verification.address, to = candidate.toAddressInfo()).await()
+                sender.send(params).await()
             }
             updateTask.await()
             sendTask.await()
