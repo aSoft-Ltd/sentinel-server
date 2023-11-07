@@ -28,6 +28,7 @@ kotlin {
                 implementation(libs.raven.config)
                 implementation(libs.sanity.flix)
                 implementation(libs.sanity.local)
+                implementation(libs.grape.mongo)
                 implementation(projects.sentinelRegistrationServiceSdk)
                 implementation(projects.sentinelEnterpriseAuthenticationServiceSdk)
             }
@@ -42,6 +43,11 @@ configure<DockateExtension> {
                 console(format = "json")
             }
 
+            database(
+                url = "mongodb://root:pass@mongo:27017",
+                name = "sentinel-${env.lowercase()}"
+            )
+
             mail(sender = "console")
             mail(sender = "bus")
 
@@ -49,14 +55,14 @@ configure<DockateExtension> {
                 name = "Sentinel Reception",
                 address = "reception@sentinel.com",
                 subject = "Sentinel Email Verification",
-                template = "/app/root/templates/registration/verification.txt"
+                template = "/app/conf/templates/registration/verification.txt"
             )
 
             recovery(
                 name = "Sentinel Security",
                 address = "security@sentinel.com",
                 subject = "Sentinel Account Recovery",
-                template = "/app/root/templates/authentication/recovery.txt"
+                template = "/app/conf/templates/authentication/recovery.txt"
             )
         }
     }
@@ -70,9 +76,9 @@ configure<DockateExtension> {
         source(layout.projectDirectory.dir("src/main/resources"))
         copy("bin", "/app/bin")
         copy("lib", "/app/lib")
-        copy("templates","/app/root/templates")
-        copy("config.toml", "/app/root/config.toml")
-        cmd("/app/bin/$name")
+        copy("templates", "/app/conf/templates")
+        copy("config.toml", "/app/conf/config.toml")
+        cmd("/app/bin/$name","/app/conf/config.toml")
     }
 
     compose("sentinel") {

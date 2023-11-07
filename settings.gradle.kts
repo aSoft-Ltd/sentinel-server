@@ -20,7 +20,7 @@ listOf(
     "kronecker", "epsilon-api", "krono-core", "hormone", "identifier-api",
     "kommerce", "kollections", "koncurrent", "kommander", "cabinet-api",
     "sentinel-core", "raven-core", "raven-client", "raven-server", "cinematic", "yeti",
-    "sanity", "kiota"
+    "sanity", "kiota", "grape"
 ).forEach { includeBuild("../$it") }
 
 rootProject.name = "sentinel-server"
@@ -28,4 +28,4 @@ rootProject.name = "sentinel-server"
 includeSubs("sentinel-reception-service", "reception", "flix", "sdk")
 includeSubs("sentinel-registration-service", "registration", "core", "flix", "sdk")
 includeSubs("sentinel-enterprise-authentication-service", "enterprise/authentication", "core", "flix", "sdk")
-includeSubs("sentinel-server", ".", "app")
+includeSubs("sentinel", ".", "app")

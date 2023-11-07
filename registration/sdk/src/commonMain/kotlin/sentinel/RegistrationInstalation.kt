@@ -12,28 +12,28 @@ import sentinel.params.SignUpParams
 import sentinel.params.UserAccountParams
 import sentinel.params.VerificationParams
 
-fun Routing.installRegistration(service: RegistrationService, endpoint: RegistrationEndpoint, codec: StringFormat) {
-    post(endpoint.signUp(), codec) {
-        val params = codec.decodeFromString(SignUpParams.serializer(), call.receiveText())
-        service.signUp(params).await()
+fun Routing.installRegistration(controller: RegistrationController) {
+    post(controller.endpoint.signUp(), controller.codec) {
+        val params = controller.codec.decodeFromString(SignUpParams.serializer(), call.receiveText())
+        controller.service.signUp(params).await()
     }
 
-    post(endpoint.sendEmailVerificationLink(), codec) {
-        val params = codec.decodeFromString(SendVerificationLinkParams.serializer(), call.receiveText())
-        service.sendVerificationLink(params).await()
+    post(controller.endpoint.sendEmailVerificationLink(), controller.codec) {
+        val params = controller.codec.decodeFromString(SendVerificationLinkParams.serializer(), call.receiveText())
+        controller.service.sendVerificationLink(params).await()
     }
 
-    post(endpoint.verifyEmail(), codec) {
-        val params = codec.decodeFromString(VerificationParams.serializer(), call.receiveText())
-        service.verify(params).await()
+    post(controller.endpoint.verifyEmail(), controller.codec) {
+        val params = controller.codec.decodeFromString(VerificationParams.serializer(), call.receiveText())
+        controller.service.verify(params).await()
     }
 
-    post(endpoint.createAccount(), codec) {
-        val params = codec.decodeFromString(UserAccountParams.serializer(), call.receiveText())
-        service.createUserAccount(params).await()
+    post(controller.endpoint.createAccount(), controller.codec) {
+        val params = controller.codec.decodeFromString(UserAccountParams.serializer(), call.receiveText())
+        controller.service.createUserAccount(params).await()
     }
 
-    get(endpoint.status(), codec) {
+    get(controller.endpoint.status(), controller.codec) {
         "Healthy"
     }
 }

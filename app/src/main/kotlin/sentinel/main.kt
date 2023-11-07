@@ -1,6 +1,5 @@
 package sentinel
 
-import com.mongodb.kotlin.client.coroutine.MongoClient
 import io.ktor.http.HttpMethod
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
@@ -8,25 +7,11 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.routing.routing
 import java.io.File
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.serialization.json.Json
-import sanity.LocalBus
 import sanity.installSanity
+import sentinel.info.installInfo
 
-fun main() {
-    val scope = CoroutineScope(SupervisorJob())
-    val bus = LocalBus()
-    val client = MongoClient.create("mongodb://root:pass@mongo:27017/")
-    val db = client.getDatabase("test-trial")
-    val options = SentinelAppConfiguration.parse(File("/app/root/config.toml")).toOptions(
-        scope = scope,
-        db = db,
-        bus = bus,
-    )
-    val service = SentinelService(options)
-    val endpoint = SentinelEndpoint("/api/v1")
-    val json = Json {}
+fun main(vararg args: String) {
+    val controller = SentinelAppConfiguration.parse(args.getOrNull(0)).toController()
 
     embeddedServer(CIO, port = 8080) {
         install(CORS) {
@@ -37,10 +22,6 @@ fun main() {
             allowMethod(HttpMethod.Delete)
         }
 
-        routing {
-            installSanity(bus, endpoint.sanity)
-            installRegistration(service = service.registration, endpoint.registration, json)
-            installAuthentication(service = service.authentication, endpoint.authentication, json)
-        }
+        routing { installSentinel(controller) }
     }.start(true)
 }

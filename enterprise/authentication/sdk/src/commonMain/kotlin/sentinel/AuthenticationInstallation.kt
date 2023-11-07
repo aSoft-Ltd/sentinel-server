@@ -12,24 +12,24 @@ import sentinel.params.SendPasswordResetParams
 import sentinel.params.SessionParams
 import sentinel.params.SignInParams
 
-fun Routing.installAuthentication(service: AuthenticationService, endpoint: AuthenticationEndpoint, codec: StringFormat) {
-    post(endpoint.signIn(), codec) {
-        val params = codec.decodeFromString<SignInParams>(call.receiveText())
-        service.signIn(params).await()
+fun Routing.installAuthentication(controller: AuthenticationController) {
+    post(controller.endpoint.signIn(), controller.codec) {
+        val params = controller.codec.decodeFromString<SignInParams>(call.receiveText())
+        controller.service.signIn(params).await()
     }
 
-    post(endpoint.session(), codec) {
-        val params = codec.decodeFromString<SessionParams>(call.receiveText())
-        service.session(params.token).await()
+    post(controller.endpoint.session(), controller.codec) {
+        val params = controller.codec.decodeFromString<SessionParams>(call.receiveText())
+        controller.service.session(params.token).await()
     }
 
-    post(endpoint.sendPasswordResetLink(), codec) {
-        val params = codec.decodeFromString<SendPasswordResetParams>(call.receiveText())
-        service.sendPasswordResetLink(params).await()
+    post(controller.endpoint.sendPasswordResetLink(), controller.codec) {
+        val params = controller.codec.decodeFromString<SendPasswordResetParams>(call.receiveText())
+        controller.service.sendPasswordResetLink(params).await()
     }
 
-    post(endpoint.resetPassword(), codec) {
-        val params = codec.decodeFromString<PasswordResetParams>(call.receiveText())
-        service.resetPassword(params).await()
+    post(controller.endpoint.resetPassword(), controller.codec) {
+        val params = controller.codec.decodeFromString<PasswordResetParams>(call.receiveText())
+        controller.service.resetPassword(params).await()
     }
 }
