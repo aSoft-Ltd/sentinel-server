@@ -6,7 +6,6 @@ import io.ktor.server.routing.Routing
 import kase.response.get
 import kase.response.post
 import koncurrent.later.await
-import kotlinx.serialization.StringFormat
 import sentinel.params.SendVerificationLinkParams
 import sentinel.params.SignUpParams
 import sentinel.params.UserAccountParams
