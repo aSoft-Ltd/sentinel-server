@@ -6,8 +6,6 @@ import com.mongodb.client.model.Updates.set
 import koncurrent.Later
 import koncurrent.later
 import koncurrent.later.await
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.toList
 import krono.currentJavaLocalDateTime
 import org.bson.types.ObjectId
@@ -15,6 +13,7 @@ import raven.SendEmailParams
 import sentinel.exceptions.InvalidTokenForRegistrationException
 import sentinel.exceptions.UserAlreadyBeganRegistrationException
 import sentinel.exceptions.UserAlreadyCompletedRegistrationException
+import sentinel.exceptions.UserAlreadyVerifiedRegistrationException
 import sentinel.exceptions.UserDidNotBeginRegistrationException
 import sentinel.params.SendVerificationLinkParams
 import sentinel.params.SignUpParams
@@ -26,19 +25,38 @@ import sentinel.transformers.toDao
 import sentinel.transformers.toPersonDao
 import yeti.Template
 
-class RegistrationServiceFlix(private val config: RegistrationServiceFlixOptions) : RegistrationService {
+class RegistrationServiceFlix(private val options: RegistrationServiceFlixOptions) : RegistrationService {
 
-    private val col = config.db.getCollection<RegistrationCandidateDao>(RegistrationCandidateDao.collection)
-    private val sender = config.sender
-    private val logger by config.logger
+    private val collection by lazy { Collection() }
+    private val sender = options.sender
+    private val logger by options.logger
     private val actions by lazy { RegistrationActionMessage() }
 
+    inner class Collection {
+        val candidate by lazy {
+            options.database.registration.getCollection<RegistrationCandidateDao>(RegistrationCandidateDao.collection)
+        }
+
+        val personal by lazy {
+            options.database.authentication.getCollection<PersonalAccountDao>(PersonalAccountDao.collection)
+        }
+
+        val business by lazy {
+            options.database.authentication.getCollection<BusinessAccountDao>(BusinessAccountDao.collection)
+        }
+
+        val relation by lazy {
+            options.database.authentication.getCollection<PersonBusinessRelationDao>(PersonBusinessRelationDao.collection)
+        }
+    }
+
     private suspend fun candidateWith(email: String): RegistrationCandidateDao? {
+        val col = collection.candidate
         val candidates = col.find<RegistrationCandidateDao>(eq(RegistrationCandidateDao::email.name, email)).toList()
         return candidates.firstOrNull()
     }
 
-    override fun signUp(params: SignUpParams) = config.scope.later {
+    override fun signUp(params: SignUpParams) = options.scope.later {
         val tracer = logger.trace(actions.signUp(params.email))
         val candidate = candidateWith(email = params.email)
         if (candidate != null) throw when (candidate.verified) {
@@ -47,68 +65,63 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixOptions
         }.also {
             tracer.failed(it)
         }
-        col.insertOne(params.toDao(config.clock))
+        collection.candidate.insertOne(params.toDao(options.clock))
         tracer.passed()
         params
     }
 
-    override fun sendVerificationLink(params: SendVerificationLinkParams): Later<String> = config.scope.later {
+    override fun sendVerificationLink(params: SendVerificationLinkParams): Later<String> = options.scope.later {
         val tracer = logger.trace(actions.sendVerificationLink(params.email))
         val email = params.email
         val link = params.link
+        val col = collection.candidate
         val candidates = col.find(eq(RegistrationCandidateDao::email.name, email)).toList()
         if (candidates.isEmpty()) throw UserDidNotBeginRegistrationException(email).also { tracer.failed(it) }
         val candidate = candidates.first()
         val token = ObjectId().toHexString().chunked(4).joinToString("-")
-        coroutineScope {
-            val updateTask = async {
-                val query = eq(RegistrationCandidateDao::email.name, email)
-                val entry = VerificationTokenDao(
-                    on = config.clock.currentJavaLocalDateTime(),
-                    to = link,
-                    text = token
-                )
-                val update = Updates.addToSet(RegistrationCandidateDao::tokens.name, entry)
-                col.updateOne(query, update)
-            }
-            val sendTask = async {
-                val params = SendEmailParams(
-                    from = config.verification.address,
-                    to = candidate.toAddress(),
-                    subject = config.verification.subject,
-                    body = Template(config.verification.template).compile(
-                        "email" to email,
-                        "name" to candidate.name,
-                        "token" to token,
-                        "link" to params.link
-                    )
-                )
-                sender.send(params).await()
-            }
-            updateTask.await()
-            sendTask.await()
-        }
+
+        val query = eq(RegistrationCandidateDao::email.name, email)
+        val entry = VerificationTokenDao(
+            on = options.clock.currentJavaLocalDateTime(),
+            to = link,
+            text = token
+        )
+        val update = Updates.addToSet(RegistrationCandidateDao::tokens.name, entry)
+        col.updateOne(query, update)
+
+        val sep = SendEmailParams(
+            from = options.verification.address,
+            to = candidate.toAddress(),
+            subject = options.verification.subject,
+            body = Template(options.verification.template).compile(
+                "email" to email,
+                "name" to candidate.name,
+                "token" to token,
+                "link" to params.link
+            )
+        )
+        sender.send(sep).await()
         tracer.passed()
         params.email
     }
 
-    override fun verify(params: VerificationParams): Later<VerificationParams> = config.scope.later {
+    override fun verify(params: VerificationParams): Later<VerificationParams> = options.scope.later {
         val tracer = logger.trace(actions.verify(params.email))
         val candidate = candidateWith(params.email) ?: throw UserDidNotBeginRegistrationException(params.email).also { tracer.failed(it) }
         if (candidate.verified) {
-            throw UserAlreadyCompletedRegistrationException(params.email).also { tracer.failed(it) }
+            throw UserAlreadyVerifiedRegistrationException(params.email).also { tracer.failed(it) }
         }
         if (candidate.tokens.last().text != params.token) {
             throw InvalidTokenForRegistrationException(params.token).also { tracer.failed(it) }
         }
         val query = eq(RegistrationCandidateDao::email.name, params.email)
         val update = set(RegistrationCandidateDao::verified.name, true)
-        col.updateOne(query, update)
+        collection.candidate.updateOne(query, update)
         tracer.passed()
         params
     }
 
-    override fun createUserAccount(params: UserAccountParams): Later<UserAccountParams> = config.scope.later {
+    override fun createUserAccount(params: UserAccountParams): Later<UserAccountParams> = options.scope.later {
         val tracer = logger.trace(actions.createAccount(params.loginId))
         val candidate = candidateWith(params.loginId) ?: throw UserDidNotBeginRegistrationException(params.loginId).also { tracer.failed(it) }
         val tokens = candidate.tokens.map { it.text }
@@ -116,23 +129,20 @@ class RegistrationServiceFlix(private val config: RegistrationServiceFlixOptions
             throw InvalidTokenForRegistrationException(params.registrationToken).also { tracer.failed(it) }
         }
 
-        val personalCollection = config.db.getCollection<PersonalAccountDao>(PersonalAccountDao.collection)
-        val people = personalCollection.find(eq(PersonalAccountDao::email.name, params.loginId)).toList()
+        val people = collection.personal.find(eq(PersonalAccountDao::email.name, params.loginId)).toList()
         if (people.isNotEmpty()) {
             throw UserAlreadyCompletedRegistrationException(params.loginId).also { tracer.failed(it) }
         }
 
-        val person = personalCollection.insertOne(params.toPersonDao(candidate.uid!!, candidate.name))
+        val person = collection.personal.insertOne(params.toPersonDao(candidate.uid!!, candidate.name))
 
-        val businessCollection = config.db.getCollection<BusinessAccountDao>(BusinessAccountDao.collection)
-        val business = businessCollection.insertOne(params.toBusinessDao(candidate.name))
+        val business = collection.business.insertOne(params.toBusinessDao(candidate.name))
 
-        val personBusiness = config.db.getCollection<PersonBusinessRelationDao>(PersonBusinessRelationDao.collection)
         val pbr = PersonBusinessRelationDao(
             business = business.insertedId!!.asObjectId().value,
             person = person.insertedId!!.asObjectId().value
         )
-        personBusiness.insertOne(pbr)
+        collection.relation.insertOne(pbr)
         tracer.passed()
         params
     }

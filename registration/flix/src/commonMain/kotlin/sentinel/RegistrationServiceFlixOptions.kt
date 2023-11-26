@@ -9,9 +9,14 @@ import raven.TemplatedEmailOptions
 
 class RegistrationServiceFlixOptions(
     val scope: CoroutineScope,
-    val db: MongoDatabase,
+    val database: Database,
     val clock: Clock,
     val sender: EmailSender,
     val logger: LoggerFactory,
     val verification: TemplatedEmailOptions
-)
+) {
+    class Database(
+        val registration: MongoDatabase,
+        val authentication: MongoDatabase
+    )
+}

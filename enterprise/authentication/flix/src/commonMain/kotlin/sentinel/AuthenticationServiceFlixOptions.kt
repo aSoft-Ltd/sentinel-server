@@ -8,7 +8,7 @@ import raven.TemplatedEmailOptions
 
 class AuthenticationServiceFlixOptions(
     val scope: CoroutineScope,
-    val db: MongoDatabase,
+    val database: MongoDatabase,
     val sender: EmailSender,
     val logger: LoggerFactory,
     val email: TemplatedEmailOptions

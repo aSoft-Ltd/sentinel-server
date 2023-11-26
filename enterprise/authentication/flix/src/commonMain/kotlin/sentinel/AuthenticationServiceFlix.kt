@@ -24,7 +24,7 @@ import sentinel.transformers.toIndividual
 import yeti.Template
 
 class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOptions) : AuthenticationService {
-    private val col = options.db.getCollection<PersonalAccountDao>(PersonalAccountDao.collection)
+    private val col = options.database.getCollection<PersonalAccountDao>(PersonalAccountDao.collection)
     private val sender = options.sender
     private val logger by options.logger
     private val actions by lazy { AuthenticationActionMessage() }
@@ -46,7 +46,7 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
             company = ObjectId(company.uid)
         )
 
-        options.db.getCollection<SessionDao>(SessionDao.collection).insertOne(session)
+        options.database.getCollection<SessionDao>(SessionDao.collection).insertOne(session)
 
         UserSession(
             user = user,
@@ -59,12 +59,12 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
     }
 
     private suspend fun loadCompanyFor(user: PersonalAccountDao): BusinessAccountDao {
-        val pbrCollection = options.db.getCollection<PersonBusinessRelationDao>(PersonBusinessRelationDao.collection)
+        val pbrCollection = options.database.getCollection<PersonBusinessRelationDao>(PersonBusinessRelationDao.collection)
         val exp = RuntimeException("User with email ${user.email}, seems to not have a business")
         val relation = pbrCollection.find(eq(PersonBusinessRelationDao::person.name, user.uid)).firstOrNull() ?: run {
             throw exp.also { logger.error("failed to load relation", it) }
         }
-        val busCollection = options.db.getCollection<BusinessAccountDao>(BusinessAccountDao.collection)
+        val busCollection = options.database.getCollection<BusinessAccountDao>(BusinessAccountDao.collection)
         val business = busCollection.find(eq("_id", relation.business)).firstOrNull() ?: run {
             throw exp.also { logger.error("failed to load company", it) }
         }
@@ -73,7 +73,7 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
 
     override fun session(token: String): Later<UserSession> = options.scope.later {
         val tracer = logger.trace(actions.session())
-        val sessionCollection = options.db.getCollection<SessionDao>(SessionDao.collection)
+        val sessionCollection = options.database.getCollection<SessionDao>(SessionDao.collection)
         val session = sessionCollection.find<SessionDao>(eq(SessionDao::token.name, token)).firstOrNull() ?: run {
             throw InvalidCredentialsAuthenticationException().also { tracer.failed(it) }
         }
@@ -82,7 +82,7 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
             throw IllegalStateException("somehow a user with a session is not registered").also { tracer.failed(it) }
         }
 
-        val companyCollection = options.db.getCollection<BusinessAccountDao>(BusinessAccountDao.collection)
+        val companyCollection = options.database.getCollection<BusinessAccountDao>(BusinessAccountDao.collection)
         val company = companyCollection.find(eq("_id", session.company)).firstOrNull()?.toCorporate() ?: run {
             throw IllegalStateException("somehow a company with a session is not registered").also { tracer.failed(it) }
         }
@@ -106,7 +106,7 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
 
         val token = ObjectId.get()
         val insert = async {
-            val collection = options.db.getCollection<PasswordResetSessionDao>(PasswordResetSessionDao.collection)
+            val collection = options.database.getCollection<PasswordResetSessionDao>(PasswordResetSessionDao.collection)
             val dao = PasswordResetSessionDao(
                 person = person.uid,
                 token = token,
@@ -140,12 +140,12 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
         val token = params.passwordResetToken?.replace("-", "") ?: run {
             throw InvalidCredentialsAuthenticationException().also { log.failed(it) }
         }
-        val resetCollection = options.db.getCollection<PasswordResetSessionDao>(PasswordResetSessionDao.collection)
+        val resetCollection = options.database.getCollection<PasswordResetSessionDao>(PasswordResetSessionDao.collection)
         val session = resetCollection.find(eq(PasswordResetSessionDao::token.name, ObjectId(token))).firstOrNull() ?: run {
             throw InvalidCredentialsAuthenticationException().also { log.failed(it) }
         }
 
-        val peopleCollection = options.db.getCollection<PersonalAccountDao>(PersonalAccountDao.collection)
+        val peopleCollection = options.database.getCollection<PersonalAccountDao>(PersonalAccountDao.collection)
         peopleCollection.updateOne(eq("_id", session.person), Updates.set(PersonalAccountDao::password.name, params.password))
         log.passed()
         params

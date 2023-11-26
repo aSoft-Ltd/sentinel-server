@@ -1,16 +1,14 @@
 package sentinel
 
-import com.mongodb.kotlin.client.coroutine.MongoDatabase
+import com.mongodb.kotlin.client.coroutine.MongoClient
 import grape.MongoDatabaseConfiguration
 import grape.MongoServiceOptions
 import kotlinx.coroutines.CoroutineScope
 import krono.SystemClock
 import lexi.LoggerFactory
 import raven.EmailSender
-import raven.Mailer
 import raven.TemplatedEmailOptions
 import sanity.EventBus
-import sentinel.info.SentinelInfoServiceOptions
 
 class SentinelServiceOptions(
     database: MongoDatabaseConfiguration,
@@ -18,21 +16,30 @@ class SentinelServiceOptions(
     val logger: LoggerFactory,
     val sender: EmailSender,
     val scope: CoroutineScope,
-    val db: MongoDatabase,
+    val mongo: MongoClient,
     val verification: TemplatedEmailOptions,
     val recovery: TemplatedEmailOptions
 ) {
     private val clock by lazy { SystemClock() }
 
     val database by lazy {
-        MongoServiceOptions(scope,db,database.maxHealthCheckToken ?: 5)
+        MongoServiceOptions(scope,mongo,database.maxHealthCheckToken ?: 5)
+    }
+
+    private val authenticationDb by lazy {
+        mongo.getDatabase("authentication")
+    }
+
+    private val registrationDb by lazy {
+        mongo.getDatabase("registration")
     }
 
     val registration by lazy {
+        val db = RegistrationServiceFlixOptions.Database(registrationDb,authenticationDb)
         RegistrationServiceFlixOptions(scope, db, clock, sender, logger, verification)
     }
 
     val authentication by lazy {
-        AuthenticationServiceFlixOptions(scope, db, sender, logger, recovery)
+        AuthenticationServiceFlixOptions(scope, authenticationDb, sender, logger, recovery)
     }
 }

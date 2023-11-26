@@ -39,7 +39,6 @@ internal class SentinelAppConfiguration(
     private fun toOptions(): SentinelServiceOptions {
         val scope = CoroutineScope(SupervisorJob())
         val bus = LocalBus()
-        val db = database.toDb()
 
         val logger = logging?.toLogger(FileSystem.SYSTEM, Clock.System, "/app/root/logs".toPath()) ?: run {
             println("[WARNING] You have not configured any logger")
@@ -65,7 +64,7 @@ internal class SentinelAppConfiguration(
             scope = scope,
             logger = logger,
             sender = sender.build(),
-            db = db,
+            mongo = database.toClient(),
             verification = verification,
             recovery = recovery,
             bus = bus
