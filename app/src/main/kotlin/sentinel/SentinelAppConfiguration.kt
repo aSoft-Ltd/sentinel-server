@@ -6,21 +6,23 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import lexi.LoggerFactory
 import lexi.LoggingConfiguration
 import net.peanuuutz.tomlkt.Toml
 import okio.FileSystem
 import okio.Path.Companion.toPath
+import raven.BusEmailTopic
 import raven.ConsoleEmailSender
-import raven.MailFactoryConfiguration
-import raven.MailSenderFactory
+import raven.MultiEmailSenderFactoryConfiguration
+import raven.MultiEmailSenderFactory
 import sanity.LocalBus
 
 @Serializable
 internal class SentinelAppConfiguration(
     val database: MongoDatabaseConfiguration,
     val logging: LoggingConfiguration?,
-    val mail: MailFactoryConfiguration?,
+    val mail: MultiEmailSenderFactoryConfiguration?,
     val registration: RegistrationServiceConfiguration?,
     val authentication: AuthenticationServiceConfiguration?
 ) {
@@ -39,14 +41,16 @@ internal class SentinelAppConfiguration(
     private fun toOptions(): SentinelServiceOptions {
         val scope = CoroutineScope(SupervisorJob())
         val bus = LocalBus()
+        val codec = Json { ignoreUnknownKeys = true }
 
         val logger = logging?.toLogger(FileSystem.SYSTEM, Clock.System, "/app/root/logs".toPath()) ?: run {
             println("[WARNING] You have not configured any logger")
             LoggerFactory()
         }
-        val sender = mail?.toFactory(bus) ?: run {
+
+        val sender = mail?.toFactory(bus, BusEmailTopic(), codec) ?: run {
             println("[WARNING] Defaulting to a console mailing service because you have not configured a mailer")
-            val fc = MailSenderFactory()
+            val fc = MultiEmailSenderFactory()
             fc.add(ConsoleEmailSender())
             fc
         }

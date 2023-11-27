@@ -1,11 +1,11 @@
 package sentinel
 
-import sanity.SanityEndpoint
+import sanity.SanityRoutes
 import sentinel.info.SentinelInfoEndpoint
 
 class SentinelEndpoint(private val base: String) {
-    val sanity by lazy { SanityEndpoint(base) }
-    val registration by lazy { RegistrationEndpoint(base) }
-    val authentication by lazy { AuthenticationEndpoint(base) }
+    val sanity by lazy { SanityRoutes(base) }
+    val registration by lazy { RegistrationRoutes(base) }
+    val authentication by lazy { AuthenticationRoutes(base) }
     val info by lazy { SentinelInfoEndpoint(base) }
 }
