@@ -4,6 +4,6 @@ import kotlinx.serialization.StringFormat
 
 class AuthenticationController(
     val service: AuthenticationService,
-    val endpoint: AuthenticationRoutes,
+    val endpoint: AuthenticationEndpoint,
     val codec: StringFormat
 )

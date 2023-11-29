@@ -4,6 +4,6 @@ import kotlinx.serialization.StringFormat
 
 class RegistrationController(
     val service: RegistrationService,
-    val endpoint: RegistrationRoutes,
+    val endpoint: RegistrationEndpoint,
     val codec: StringFormat
 )
