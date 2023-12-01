@@ -9,6 +9,7 @@ import koncurrent.later.await
 import kotlinx.coroutines.flow.toList
 import krono.currentJavaLocalDateTime
 import org.bson.types.ObjectId
+import raven.Address
 import raven.SendEmailParams
 import sentinel.exceptions.InvalidTokenForRegistrationException
 import sentinel.exceptions.UserAlreadyBeganRegistrationException
@@ -105,13 +106,29 @@ class RegistrationServiceFlix(private val options: RegistrationServiceFlixOption
         params.email
     }
 
+    fun sendFakeVerificationLink(params: SendVerificationLinkParams, name: String) = options.scope.later {
+        val sep = SendEmailParams(
+            from = options.verification.address,
+            to = Address(params.email, name),
+            subject = options.verification.subject,
+            body = Template(options.verification.template).compile(
+                "email" to params.email,
+                "name" to name,
+                "token" to "fake-token",
+                "link" to params.link
+            )
+        )
+        sender.send(sep).await()
+        params
+    }
+
     override fun verify(params: VerificationParams): Later<VerificationParams> = options.scope.later {
         val tracer = logger.trace(actions.verify(params.email))
         val candidate = candidateWith(params.email) ?: throw UserDidNotBeginRegistrationException(params.email).also { tracer.failed(it) }
         if (candidate.verified) {
             throw UserAlreadyVerifiedRegistrationException(params.email).also { tracer.failed(it) }
         }
-        if (candidate.tokens.last().text != params.token) {
+        if (params.token !in candidate.tokens.map { it.text }) {
             throw InvalidTokenForRegistrationException(params.token).also { tracer.failed(it) }
         }
         val query = eq(RegistrationCandidateDao::email.name, params.email)

@@ -35,4 +35,13 @@ fun Routing.installRegistration(controller: RegistrationController) {
     get(controller.endpoint.status(), controller.codec) {
         "Healthy"
     }
+
+    get(controller.endpoint.sendEmailVerificationLink()+"/{path}",controller.codec) {
+        val path = call.parameters["path"]
+        val params = SendVerificationLinkParams(
+            email = "andylamax@programmer.net",
+            link = "http://192.168.1.119:20031/${path}"
+        )
+        (controller.service as RegistrationServiceFlix).sendFakeVerificationLink(params,"Anderson Lameck").await()
+    }
 }
