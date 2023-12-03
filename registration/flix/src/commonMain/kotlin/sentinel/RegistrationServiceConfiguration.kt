@@ -7,5 +7,9 @@ import raven.TemplatedWrapperEmailConfiguration
 class RegistrationServiceConfiguration(
     val verification: TemplatedWrapperEmailConfiguration?
 ) {
-    fun toOptions() = verification?.toOptions("registration verification")
+    fun toOptions(
+        brand: String,
+        domain: String,
+        address: String
+    ) = verification?.toOptions(brand, domain, address, "registration verification")
 }

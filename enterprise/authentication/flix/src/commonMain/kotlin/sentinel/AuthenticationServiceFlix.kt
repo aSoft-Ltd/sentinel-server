@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import org.bson.types.ObjectId
 import raven.Address
+import raven.EmailTemplate
 import raven.SendEmailParams
 import sentinel.daos.PasswordResetSessionDao
 import sentinel.daos.SessionDao
@@ -117,10 +118,10 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
 
         val send = async {
             val sep = SendEmailParams(
-                from = options.email.address,
+                from = options.email.from,
                 to = Address(email = email, name = person.name),
                 subject = options.email.subject,
-                body = Template(options.email.template).compile(
+                body = options.email.template.compile(
                     "email" to email,
                     "name" to person.name,
                     "token" to token.toHexString().chunked(4).joinToString("-"),
@@ -134,6 +135,11 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
         tracer.passed()
         email
     }
+
+    private fun EmailTemplate.compile(vararg params: Pair<String, Any>) = EmailTemplate(
+        html = Template(html).compile(*params),
+        plain = Template(plain).compile(*params)
+    )
 
     override fun resetPassword(params: PasswordResetParams): Later<PasswordResetParams> = options.scope.later {
         val log = logger.trace(actions.resetPassword(params.passwordResetToken))

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.toList
 import krono.currentJavaLocalDateTime
 import org.bson.types.ObjectId
 import raven.Address
+import raven.EmailTemplate
 import raven.SendEmailParams
 import sentinel.exceptions.InvalidTokenForRegistrationException
 import sentinel.exceptions.UserAlreadyBeganRegistrationException
@@ -91,10 +92,10 @@ class RegistrationServiceFlix(private val options: RegistrationServiceFlixOption
         col.updateOne(query, update)
 
         val sep = SendEmailParams(
-            from = options.verification.address,
+            from = options.verification.from,
             to = candidate.toAddress(),
             subject = options.verification.subject,
-            body = Template(options.verification.template).compile(
+            body = options.verification.template.compile(
                 "email" to email,
                 "name" to candidate.name,
                 "token" to token,
@@ -106,14 +107,24 @@ class RegistrationServiceFlix(private val options: RegistrationServiceFlixOption
         params.email
     }
 
+    private fun EmailTemplate.compile(vararg params: Pair<String, Any>) = EmailTemplate(
+        html = Template(html).compile(*params),
+        plain = Template(plain).compile(*params)
+    )
+
     fun sendFakeVerificationLink(params: SendVerificationLinkParams, name: String) = options.scope.later {
         val sep = SendEmailParams(
-            from = options.verification.address,
+            from = options.verification.from,
             to = Address(params.email, name),
             subject = options.verification.subject,
-            body = Template(options.verification.template).compile(
+            body = options.verification.template.compile(
                 "email" to params.email,
                 "name" to name,
+                "subject" to options.verification.subject,
+                "brand" to options.verification.brand,
+                "domain" to options.verification.domain,
+                "year" to 2023,
+                "address" to options.verification.address,
                 "token" to "fake-token",
                 "link" to params.link
             )

@@ -7,5 +7,9 @@ import raven.TemplatedWrapperEmailConfiguration
 class AuthenticationServiceConfiguration(
     val recovery: TemplatedWrapperEmailConfiguration?
 ) {
-    fun toOptions() = recovery?.toOptions("authentication recovery")
+    fun toOptions(
+        brand: String,
+        domain: String,
+        address: String
+    ) = recovery?.toOptions(brand, domain, address, "authentication recovery")
 }
