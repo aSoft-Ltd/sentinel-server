@@ -117,29 +117,14 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
         }
 
         val send = async {
-            val sep = SendEmailParams(
-                from = options.email.from,
-                to = Address(email = email, name = person.name),
-                subject = options.email.subject,
-                body = options.email.template.compile(
-                    "email" to email,
-                    "name" to person.name,
-                    "token" to token.toHexString().chunked(4).joinToString("-"),
-                    "link" to params.link
-                )
-            )
-            sender.send(sep).await()
+            val link = "${params.link}?token=${token.toHexString().chunked(4).joinToString("-")}"
+            sender.send(options.email.params(Address(email = email, name = person.name), link)).await()
         }
 
         insert.await(); send.await()
         tracer.passed()
         email
     }
-
-    private fun EmailTemplate.compile(vararg params: Pair<String, Any>) = EmailTemplate(
-        html = Template(html).compile(*params),
-        plain = Template(plain).compile(*params)
-    )
 
     override fun resetPassword(params: PasswordResetParams): Later<PasswordResetParams> = options.scope.later {
         val log = logger.trace(actions.resetPassword(params.passwordResetToken))

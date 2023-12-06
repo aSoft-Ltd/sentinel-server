@@ -12,6 +12,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                api(projects.sentinelEmails)
                 api(libs.sentinel.registration.core)
                 api(libs.raven.api)
             }

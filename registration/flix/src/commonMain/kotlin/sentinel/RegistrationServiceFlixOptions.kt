@@ -6,6 +6,7 @@ import krono.Clock
 import lexi.LoggerFactory
 import raven.EmailSender
 import raven.MultiEmailSender
+import raven.SendEmailTemplateParams
 import raven.TemplatedEmailOptions
 
 class RegistrationServiceFlixOptions(
@@ -14,7 +15,7 @@ class RegistrationServiceFlixOptions(
     val clock: Clock,
     val sender: MultiEmailSender,
     val logger: LoggerFactory,
-    val verification: TemplatedEmailOptions
+    val verification: TemplatedEmailOptions,
 ) {
     class Database(
         val registration: MongoDatabase,

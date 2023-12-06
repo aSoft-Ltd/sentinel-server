@@ -15,7 +15,6 @@ import raven.SendEmailParams
 import sentinel.exceptions.InvalidTokenForRegistrationException
 import sentinel.exceptions.UserAlreadyBeganRegistrationException
 import sentinel.exceptions.UserAlreadyCompletedRegistrationException
-import sentinel.exceptions.UserAlreadyVerifiedRegistrationException
 import sentinel.exceptions.UserDidNotBeginRegistrationException
 import sentinel.params.SendVerificationLinkParams
 import sentinel.params.SignUpParams
@@ -91,50 +90,14 @@ class RegistrationServiceFlix(private val options: RegistrationServiceFlixOption
         val update = Updates.addToSet(RegistrationCandidateDao::tokens.name, entry)
         col.updateOne(query, update)
 
-        val sep = SendEmailParams(
-            from = options.verification.from,
-            to = candidate.toAddress(),
-            subject = options.verification.subject,
-            body = options.verification.template.compile(
-                "email" to email,
-                "name" to candidate.name,
-                "subject" to options.verification.subject,
-                "brand" to options.verification.brand,
-                "domain" to options.verification.domain,
-                "year" to 2023,
-                "address" to options.verification.address,
-                "token" to token,
-                "link" to params.link
-            )
-        )
-        sender.send(sep).await()
+        sender.send(options.verification.params(candidate.toAddress(), link)).await()
         tracer.passed()
         params.email
     }
 
-    private fun EmailTemplate.compile(vararg params: Pair<String, Any>) = EmailTemplate(
-        html = Template(html).compile(*params),
-        plain = Template(plain).compile(*params)
-    )
-
     fun sendFakeVerificationLink(params: SendVerificationLinkParams, name: String) = options.scope.later {
-        val sep = SendEmailParams(
-            from = options.verification.from,
-            to = Address(params.email, name),
-            subject = options.verification.subject,
-            body = options.verification.template.compile(
-                "email" to params.email,
-                "name" to name,
-                "subject" to options.verification.subject,
-                "brand" to options.verification.brand,
-                "domain" to options.verification.domain,
-                "year" to 2023,
-                "address" to options.verification.address,
-                "token" to "fake-token",
-                "link" to params.link
-            )
-        )
-        sender.send(sep).await()
+        val to = Address(email = params.email, name = name)
+        sender.send(options.verification.params(to, "${params.link}?token=fake-token")).await()
         params
     }
 
