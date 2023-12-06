@@ -21,6 +21,7 @@ import sanity.LocalBus
 @Serializable
 internal class SentinelAppConfiguration(
     val database: MongoDatabaseConfiguration,
+    val owner: OwnerConfiguration,
     val logging: LoggingConfiguration?,
     val mail: MultiEmailSenderFactoryConfiguration?,
     val registration: RegistrationServiceConfiguration?,
@@ -55,11 +56,19 @@ internal class SentinelAppConfiguration(
             fc
         }
 
-        val verification = registration?.toOptions() ?: run {
+        val verification = registration?.toOptions(
+            brand = owner.name,
+            domain = owner.domain,
+            address = owner.address
+        ) ?: run {
             throw IllegalArgumentException("Missing registration verification configuration")
         }
 
-        val recovery = authentication?.toOptions() ?: run {
+        val recovery = authentication?.toOptions(
+            brand = owner.name,
+            domain = owner.domain,
+            address = owner.address
+        ) ?: run {
             throw IllegalArgumentException("Missing authentication recovery configuration")
         }
 

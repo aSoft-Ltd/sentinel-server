@@ -98,6 +98,11 @@ class RegistrationServiceFlix(private val options: RegistrationServiceFlixOption
             body = options.verification.template.compile(
                 "email" to email,
                 "name" to candidate.name,
+                "subject" to options.verification.subject,
+                "brand" to options.verification.brand,
+                "domain" to options.verification.domain,
+                "year" to 2023,
+                "address" to options.verification.address,
                 "token" to token,
                 "link" to params.link
             )
@@ -136,9 +141,6 @@ class RegistrationServiceFlix(private val options: RegistrationServiceFlixOption
     override fun verify(params: VerificationParams): Later<VerificationParams> = options.scope.later {
         val tracer = logger.trace(actions.verify(params.email))
         val candidate = candidateWith(params.email) ?: throw UserDidNotBeginRegistrationException(params.email).also { tracer.failed(it) }
-        if (candidate.verified) {
-            throw UserAlreadyVerifiedRegistrationException(params.email).also { tracer.failed(it) }
-        }
         if (params.token !in candidate.tokens.map { it.text }) {
             throw InvalidTokenForRegistrationException(params.token).also { tracer.failed(it) }
         }

@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import krono.SystemClock
 import lexi.LoggerFactory
 import raven.EmailSender
+import raven.MultiEmailSender
 import raven.TemplatedEmailOptions
 import sanity.EventBus
 
@@ -14,7 +15,7 @@ class SentinelServiceOptions(
     database: MongoDatabaseConfiguration,
     val bus: EventBus,
     val logger: LoggerFactory,
-    val sender: EmailSender,
+    val sender: MultiEmailSender,
     val scope: CoroutineScope,
     val mongo: MongoClient,
     val verification: TemplatedEmailOptions,
