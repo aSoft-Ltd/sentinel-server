@@ -90,7 +90,7 @@ class RegistrationServiceFlix(private val options: RegistrationServiceFlixOption
         val update = Updates.addToSet(RegistrationCandidateDao::tokens.name, entry)
         col.updateOne(query, update)
 
-        sender.send(options.verification.params(candidate.toAddress(), link)).await()
+        sender.send(options.verification.params(candidate.toAddress(), "${params.link}?token=$token")).await()
         tracer.passed()
         params.email
     }
