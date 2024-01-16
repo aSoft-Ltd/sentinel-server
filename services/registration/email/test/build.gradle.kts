@@ -14,8 +14,8 @@ kotlin {
             api(projects.sentinelEmails)
             api(projects.sentinelServicesRegistrationEmailCore)
             api(libs.raven.mock)
-            implementation(libs.kommander.coroutines)
-            implementation(libs.koncurrent.later.coroutines)
+            api(libs.kommander.coroutines)
+            api(libs.koncurrent.later.coroutines)
         }
     }
 }

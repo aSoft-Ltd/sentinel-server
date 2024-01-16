@@ -21,45 +21,6 @@ abstract class EmailRegistrationServiceFlixTest(
     private val sender: MockEmailSender
 ) {
 
-//    private val bus = LocalBus()
-//    private val topic = BusEmailTopic()
-//    private val codec = Json { }
-//    val beo = BusEmailOptions(bus, topic, codec)
-//    private val receiver = BusEmailReceiver(beo)
-//
-//    private val mock = MockEmailSender()
-//    private val domain = "http://sentinel.test"
-//
-//    private val template = "Hi {{name}}, Welcome to {{brand}}\nClick on this link to verify your token\n{{link}}?token={{token}}"
-//    private val emailOptions = TemplatedEmailOptions(
-//        from = Address(email = "registration@test.com", name = "Tester"),
-//        subject = "Please Verify Your Email",
-//        template = EmailTemplate(template, template),
-//        brand = "Sentinel",
-//        domain = domain,
-//        address = "Sentinel HQ, Asgard"
-//    )
-//
-//    private val service: RegistrationService by lazy {
-//        val scope = CoroutineScope(SupervisorJob())
-//        val client = MongoClient.create("mongodb://root:pass@localhost:27017")
-//        val db = client.getDatabase("test-trial")
-//        val clock = SystemClock()
-//        val mailer = emailSender {
-//            add(ConsoleEmailSender())
-//            add(BusEmailSender(beo))
-//            add(mock)
-//        }
-//        val logger = loggerFactory {
-//            add(ConsoleAppender(ConsoleAppenderOptions(formatter = JsonLogFormatter())))
-//        }
-//        val database = RegistrationServiceFlixOptions.Database(
-//            registration = client.getDatabase("registration"),
-//            authentication = client.getDatabase("authentication")
-//        )
-//        RegistrationServiceFlix(RegistrationServiceFlixOptions(scope, database, clock, mailer, logger, emailOptions))
-//    }
-
     @Test
     fun should_be_able_to_send_email_verification_for_a_user_who_has_began_the_registration_process() = runTest {
         val res = service.signUp(EmailSignUpParams("Pepper Pots", "pepper@lamax.com")).await()
