@@ -1,9 +1,8 @@
 package sentinel
 
-import koncurrent.Later
 import sentinel.params.SendVerificationLinkParams
+import koncurrent.Later
 
-interface RegistrationService : RegistrationScheme {
-
+interface EmailRegistrationService : RegistrationService, EmailRegistrationScheme {
     fun sendVerificationLink(params: SendVerificationLinkParams): Later<String>
 }

@@ -25,6 +25,12 @@ listOf(
 
 rootProject.name = "sentinel-server"
 
+includeSubs("sentinel-services-reception", "services/reception", "flix")
+
+includeSubs("sentinel-services-registration", "services/registration", "core")
+includeSubs("sentinel-services-registration-email", "services/registration/email", "core", "flix", "test")
+includeSubs("sentinel-services-registration-phone", "services/registration/phone", "core")
+
 includeSubs("sentinel-reception-service", "reception", "flix", "sdk")
 includeSubs("sentinel-registration-service", "registration", "core", "flix", "sdk")
 includeSubs("sentinel-enterprise-authentication-service", "enterprise/authentication", "core", "flix", "sdk")
