@@ -12,9 +12,10 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api(projects.sentinelSchemesAuthenticationEnterpriseCore)
-                api(libs.raven.markup.html)
-                api(libs.raven.api)
+                api(projects.sentinelServicesEnterpriseAuthenticationEmailCore)
+                api(projects.sentinelServicesReceptionFlix)
+                api(libs.raven.config)
+                api(libs.lexi.config)
             }
         }
 
@@ -24,12 +25,6 @@ kotlin {
                 implementation(libs.raven.smtp)
                 implementation(libs.raven.mock)
                 implementation(libs.yeti.core)
-            }
-        }
-
-        val commonTest by getting {
-            dependencies {
-                implementation(libs.kommander.coroutines)
             }
         }
     }

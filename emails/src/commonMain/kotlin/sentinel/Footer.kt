@@ -1,6 +1,7 @@
 package sentinel
 
 import identifier.Brand
+import kollections.iterator
 import raven.Body
 import raven.ComponentScope
 
@@ -23,7 +24,7 @@ fun ComponentScope<Body>.Footer(
         p { text(css.font(size = font), brand.address) }
         p { text(css.font(size = font), "Copyright ${169.toChar()} $year") }
         row(css.padding(top = "1em").max(width = "20em")) {
-            for (s in brand.socials) col(center) {
+            for (s in brand.socials.iterator()) col(center) {
                 a(href = s.handle) {
                     img(style = css.display("inline-block").width("30px"), src = s.icon, alt = s.handle)
                 }

@@ -12,7 +12,11 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(libs.sentinel.schemes.registration.core)
+            api(projects.sentinelServicesEnterpriseAuthenticationEmailCore)
+            api(libs.koncurrent.later.coroutines)
+            api(libs.kase.response.ktor.server)
+            api(ktor.server.core)
+            api(kotlinx.serialization.json)
         }
     }
 }
