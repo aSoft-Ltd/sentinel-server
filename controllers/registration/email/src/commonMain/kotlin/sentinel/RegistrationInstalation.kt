@@ -3,6 +3,7 @@ package sentinel
 import io.ktor.server.application.call
 import io.ktor.server.request.receiveText
 import io.ktor.server.routing.Routing
+import io.ktor.server.util.getValue
 import kase.response.get
 import kase.response.post
 import koncurrent.later.await
@@ -30,6 +31,11 @@ fun Routing.installRegistration(controller: RegistrationController) {
     post(controller.endpoint.createAccount(), controller.codec) {
         val params = controller.codec.decodeFromString(UserAccountParams.serializer(), call.receiveText())
         controller.service.createUserAccount(params).await()
+    }
+
+    get(controller.endpoint.abort("{email}"), controller.codec) {
+        val email: String by call.parameters
+        controller.service.abort(email).await()
     }
 
     get(controller.endpoint.status(), controller.codec) {

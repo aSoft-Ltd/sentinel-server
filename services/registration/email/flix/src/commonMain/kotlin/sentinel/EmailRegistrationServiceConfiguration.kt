@@ -20,7 +20,7 @@ class EmailRegistrationServiceConfiguration(
         val subject = verification.toSubject(service)
 
         return TemplatedEmailOptions { to, link ->
-            val greeting = "Hello ${to.name},"
+            val greeting = "Hello ${to.name}"
             SendEmailParams(
                 from = from,
                 to = to,

@@ -3,6 +3,8 @@ package sentinel
 import io.ktor.server.application.call
 import io.ktor.server.request.receiveText
 import io.ktor.server.routing.Routing
+import io.ktor.server.util.getValue
+import kase.response.get
 import kase.response.post
 import koncurrent.later.await
 import kotlinx.serialization.decodeFromString
@@ -30,5 +32,16 @@ fun Routing.installAuthentication(controller: AuthenticationController) {
     post(controller.endpoint.resetPassword(), controller.codec) {
         val params = controller.codec.decodeFromString<PasswordResetParams>(call.receiveText())
         controller.service.resetPassword(params).await()
+    }
+
+    get(controller.endpoint.delete("{email}", "{password}"), controller.codec) {
+        val email: String by call.parameters
+        val password: String by call.parameters
+        controller.service.delete(EmailSignInParams(email, password)).await()
+    }
+
+    get(controller.endpoint.signOut("{token}"), controller.codec) {
+        val token: String by call.parameters
+        controller.service.signOut(token).await()
     }
 }
