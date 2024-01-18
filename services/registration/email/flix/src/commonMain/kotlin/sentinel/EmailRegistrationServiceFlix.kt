@@ -4,6 +4,7 @@ import com.mongodb.client.model.Filters.eq
 import com.mongodb.client.model.Updates
 import com.mongodb.client.model.Updates.set
 import koncurrent.Later
+import koncurrent.TODOLater
 import koncurrent.later
 import koncurrent.later.await
 import kotlinx.coroutines.flow.toList
@@ -135,5 +136,13 @@ class EmailRegistrationServiceFlix(private val options: EmailRegistrationService
         collection.relation.insertOne(pbr)
         tracer.passed()
         params
+    }
+
+    override fun abort(email: String): Later<String> = options.scope.later {
+        val tracer = logger.trace(actions.abort(email))
+        candidateWith(email) ?: throw UserWithEmailDidNotBeginRegistrationException(email).also { tracer.failed(it) }
+        collection.candidate.deleteOne(eq(EmailRegistrationCandidateDao::email.name,email))
+        tracer.passed()
+        email
     }
 }

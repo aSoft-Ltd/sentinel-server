@@ -21,6 +21,19 @@ abstract class EmailRegistrationServiceFlixTest(
     private val sender: MockEmailSender
 ) {
 
+    private val link = "https://test.com"
+
+    private fun String.toSendVerificationLinkParams() = SendVerificationLinkParams(this,link)
+
+    @Test
+    fun should_be_able_to_abort_registration() = runTest {
+        val email = "aborter@test.com"
+        service.signUp(EmailSignUpParams("Test Aborter", email)).await()
+        service.abort(email).await()
+        val err = expectFailure { service.sendVerificationLink(email.toSendVerificationLinkParams()).await() }
+        expect(err.message).toBe("User with email ($email) has not began registration yet")
+    }
+
     @Test
     fun should_be_able_to_send_email_verification_for_a_user_who_has_began_the_registration_process() = runTest {
         val res = service.signUp(EmailSignUpParams("Pepper Pots", "pepper@lamax.com")).await()
@@ -28,6 +41,7 @@ abstract class EmailRegistrationServiceFlixTest(
         val email = receiver.anticipate()
         service.sendVerificationLink(params).await()
         val message = email.await()
+        service.abort("pepper@lamax.com").await()
         expect(message.body).toContain("Hi Pepper Pots")
     }
 
@@ -82,6 +96,7 @@ abstract class EmailRegistrationServiceFlixTest(
         service.verify(EmailVerificationParams(email = res.email, token = token)).await()
 
         val exp = expectFailure { service.signUp(params1).await() }
+        service.abort(params1.email).await()
         expect(exp.message).toBe(UserWithEmailAlreadyCompletedRegistrationException(params1.email).message)
     }
 
@@ -92,6 +107,7 @@ abstract class EmailRegistrationServiceFlixTest(
         service.sendVerificationLink(params1).await()
         val params2 = EmailVerificationParams(email = res.email, token = "garbage")
         val exp = expectFailure { service.verify(params2).await() }
+        service.abort("wanda@max.com").await()
         expect(exp.message).toBe(InvalidTokenForRegistrationException(params2.token).message)
     }
 
