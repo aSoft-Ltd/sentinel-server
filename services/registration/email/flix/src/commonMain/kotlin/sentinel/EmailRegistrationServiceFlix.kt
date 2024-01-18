@@ -57,6 +57,9 @@ class EmailRegistrationServiceFlix(private val options: EmailRegistrationService
 
     override fun signUp(params: EmailSignUpParams) = options.scope.later {
         val tracer = logger.trace(actions.signUp(params.email))
+        if(collection.personal.find(eq(PersonalAccountDao::email.name,params.email)).toList().isNotEmpty()) {
+            throw UserWithEmailAlreadyCompletedRegistrationException(params.email).also { tracer.failed(it) }
+        }
         val candidate = candidateWith(email = params.email)
         if (candidate != null) throw when (candidate.verified) {
             true -> UserWithEmailAlreadyCompletedRegistrationException(params.email)
@@ -134,6 +137,7 @@ class EmailRegistrationServiceFlix(private val options: EmailRegistrationService
             person = person.insertedId!!.asObjectId().value
         )
         collection.relation.insertOne(pbr)
+        collection.candidate.deleteMany(eq(EmailRegistrationCandidateDao::email.name, params.loginId))
         tracer.passed()
         params
     }
@@ -141,7 +145,7 @@ class EmailRegistrationServiceFlix(private val options: EmailRegistrationService
     override fun abort(email: String): Later<String> = options.scope.later {
         val tracer = logger.trace(actions.abort(email))
         candidateWith(email) ?: throw UserWithEmailDidNotBeginRegistrationException(email).also { tracer.failed(it) }
-        collection.candidate.deleteOne(eq(EmailRegistrationCandidateDao::email.name,email))
+        collection.candidate.deleteMany(eq(EmailRegistrationCandidateDao::email.name, email))
         tracer.passed()
         email
     }

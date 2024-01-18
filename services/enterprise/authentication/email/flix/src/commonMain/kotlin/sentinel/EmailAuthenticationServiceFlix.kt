@@ -95,6 +95,14 @@ class EmailAuthenticationServiceFlix(private val options: EmailAuthenticationSer
         ).also { tracer.passed() }
     }
 
+    override fun signOut(token: String): Later<UserSession> = options.scope.later {
+        val tracer = logger.trace(actions.signOut(token))
+        val session = session(token).await()
+        options.database.getCollection<SessionDao>(SessionDao.collection).deleteMany(eq(SessionDao::token.name,token))
+        tracer.passed()
+        session
+    }
+
     override fun sendPasswordResetLink(params: SendPasswordResetParams): Later<String> = options.scope.later {
         val email = params.email
         val tracer = logger.trace(actions.sendPasswordResetLink(email))
@@ -136,6 +144,21 @@ class EmailAuthenticationServiceFlix(private val options: EmailAuthenticationSer
         val peopleCollection = options.database.getCollection<PersonalAccountDao>(PersonalAccountDao.collection)
         peopleCollection.updateOne(eq("_id", session.person), Updates.set(PersonalAccountDao::password.name, params.password))
         log.passed()
+        params
+    }
+
+    override fun delete(params: EmailSignInParams): Later<EmailSignInParams> = options.scope.later {
+        val tracer = logger.trace(actions.delete(params.email))
+        val person = col.find(eq(PersonalAccountDao::email.name, params.email)).toList().firstOrNull() ?: run {
+            throw UserNotRegisteredForAuthenticationException(params.email).also { tracer.failed(it) }
+        }
+        if (person.password != params.password) {
+            throw InvalidCredentialsAuthenticationException().also { tracer.failed(it) }
+        }
+        col.deleteOne(eq(PersonalAccountDao::email.name, params.email))
+        val sessionCollection = options.database.getCollection<SessionDao>(SessionDao.collection)
+        sessionCollection.deleteMany(eq(SessionDao::user.name, person.uid))
+        tracer.passed()
         params
     }
 }
