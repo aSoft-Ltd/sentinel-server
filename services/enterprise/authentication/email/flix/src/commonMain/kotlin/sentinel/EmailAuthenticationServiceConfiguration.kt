@@ -19,20 +19,20 @@ class EmailAuthenticationServiceConfiguration(
         val from = recovery.toAddress(service)
         val subject = recovery.toSubject(service)
 
-        return TemplatedEmailOptions { to, link ->
-            val greeting = "Hello ${to.name},"
+        return TemplatedEmailOptions { params ->
+            val greeting = "Hello ${params.to.name},"
             SendEmailParams(
                 from = from,
-                to = to,
+                to = params.to,
                 subject = subject,
                 body = EmailTemplate(
-                    plain = "$greeting, here is your verification token. \n$link",
+                    plain = "$greeting, here is your verification token. \n${params.link}",
                     html = RecoveryEmails.recovery(
                         brand = brand,
                         label = brand.name,
                         greeting = greeting,
                         receptionist = null,
-                        link = link,
+                        link = params.link,
                         year = clock.currentInstant().atSystemZone().year.toString()
                     ).toHtmlString(" ")
                 )

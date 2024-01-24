@@ -12,10 +12,11 @@ suspend fun EmailRegistrationService.register(
     name: String,
     email: String,
     password: String,
+    meta: String
 ) {
     val params1 = EmailSignUpParams(name, email)
     val res = signUp(params1).await()
-    val params2 = SendVerificationLinkParams(email = res.email, link = "https://test.com")
+    val params2 = SendVerificationLinkParams(email = res.email, link = "https://test.com", meta)
 
     val mail = receiver.anticipate()
     sendVerificationLink(params2).await()

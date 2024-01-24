@@ -4,19 +4,13 @@ import com.mongodb.client.model.Filters.eq
 import com.mongodb.client.model.Updates
 import com.mongodb.client.model.Updates.set
 import koncurrent.Later
-import koncurrent.later.then
-import koncurrent.later.andThen
-import koncurrent.later.andZip
-import koncurrent.later.zip
-import koncurrent.later.catch
 import koncurrent.later
 import koncurrent.later.await
 import kotlinx.coroutines.flow.toList
 import krono.currentJavaLocalDateTime
 import org.bson.types.ObjectId
 import raven.Address
-import raven.EmailTemplate
-import raven.SendEmailParams
+import raven.FactoryParams
 import sentinel.exceptions.InvalidTokenForRegistrationException
 import sentinel.exceptions.UserAlreadyBeganRegistrationException
 import sentinel.exceptions.UserAlreadyCompletedRegistrationException
@@ -29,7 +23,6 @@ import sentinel.transformers.toAddress
 import sentinel.transformers.toBusinessDao
 import sentinel.transformers.toDao
 import sentinel.transformers.toPersonDao
-import yeti.Template
 
 class RegistrationServiceFlix(private val options: RegistrationServiceFlixOptions) : RegistrationService {
 
@@ -95,14 +88,16 @@ class RegistrationServiceFlix(private val options: RegistrationServiceFlixOption
         val update = Updates.addToSet(RegistrationCandidateDao::tokens.name, entry)
         col.updateOne(query, update)
 
-        sender.send(options.verification.params(candidate.toAddress(), "${params.link}?token=$token")).await()
+        val fp = FactoryParams(candidate.toAddress(), "${params.link}?token=$token", params.meta)
+        sender.send(options.verification.factory(fp)).await()
         tracer.passed()
         params.email
     }
 
     fun sendFakeVerificationLink(params: SendVerificationLinkParams, name: String) = options.scope.later {
         val to = Address(email = params.email, name = name)
-        sender.send(options.verification.params(to, "${params.link}?token=fake-token")).await()
+        val fp = FactoryParams(to, "${params.link}?token=fake-token", "test")
+        sender.send(options.verification.factory(fp)).await()
         params
     }
 

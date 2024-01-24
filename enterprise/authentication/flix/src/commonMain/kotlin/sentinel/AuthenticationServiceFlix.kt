@@ -4,11 +4,6 @@ import com.mongodb.client.model.Filters.eq
 import com.mongodb.client.model.Updates
 import kash.Currency
 import koncurrent.Later
-import koncurrent.later.then
-import koncurrent.later.andThen
-import koncurrent.later.andZip
-import koncurrent.later.zip
-import koncurrent.later.catch
 import koncurrent.later
 import koncurrent.later.await
 import kotlinx.coroutines.async
@@ -16,8 +11,6 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import org.bson.types.ObjectId
 import raven.Address
-import raven.EmailTemplate
-import raven.SendEmailParams
 import sentinel.daos.PasswordResetSessionDao
 import sentinel.daos.SessionDao
 import sentinel.exceptions.InvalidCredentialsAuthenticationException
@@ -27,7 +20,6 @@ import sentinel.params.SendPasswordResetParams
 import sentinel.params.SignInParams
 import sentinel.transformers.toCorporate
 import sentinel.transformers.toIndividual
-import yeti.Template
 
 class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOptions) : AuthenticationService {
     private val col = options.database.getCollection<PersonalAccountDao>(PersonalAccountDao.collection)
@@ -123,7 +115,7 @@ class AuthenticationServiceFlix(private val options: AuthenticationServiceFlixOp
 
         val send = async {
             val link = "${params.link}?token=${token.toHexString().chunked(4).joinToString("-")}"
-            sender.send(options.email.params(Address(email = email, name = person.name), link)).await()
+            sender.send(options.email.factory(Address(email = email, name = person.name), link)).await()
         }
 
         insert.await(); send.await()

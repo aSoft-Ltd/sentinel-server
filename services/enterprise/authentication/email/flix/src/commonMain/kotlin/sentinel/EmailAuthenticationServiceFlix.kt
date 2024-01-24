@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import org.bson.types.ObjectId
 import raven.Address
+import raven.FactoryParams
 import sentinel.daos.PasswordResetSessionDao
 import sentinel.daos.SessionDao
 import sentinel.exceptions.InvalidCredentialsAuthenticationException
@@ -98,7 +99,7 @@ class EmailAuthenticationServiceFlix(private val options: EmailAuthenticationSer
     override fun signOut(token: String): Later<UserSession> = options.scope.later {
         val tracer = logger.trace(actions.signOut(token))
         val session = session(token).await()
-        options.database.getCollection<SessionDao>(SessionDao.collection).deleteMany(eq(SessionDao::token.name,token))
+        options.database.getCollection<SessionDao>(SessionDao.collection).deleteMany(eq(SessionDao::token.name, token))
         tracer.passed()
         session
     }
@@ -123,7 +124,8 @@ class EmailAuthenticationServiceFlix(private val options: EmailAuthenticationSer
 
         val send = async {
             val link = "${params.link}?token=${token.toHexString().chunked(4).joinToString("-")}"
-            sender.send(options.email.params(Address(email = email, name = person.name), link)).await()
+            val fp = FactoryParams(Address(email = email, name = person.name), link, params.meta)
+            sender.send(options.email.factory(fp)).await()
         }
 
         insert.await(); send.await()
