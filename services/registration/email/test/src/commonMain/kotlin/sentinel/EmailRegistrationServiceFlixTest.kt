@@ -60,6 +60,7 @@ abstract class EmailRegistrationServiceFlixTest(
         service.verify(EmailVerificationParams(email = res.email, token = token)).await()
 
         val exp = expectFailure { service.signUp(params1).await() }
+        service.abort("tony@stark.com")
         expect(exp.message).toBe(UserWithEmailAlreadyCompletedRegistrationException(params1.email).message)
     }
 
@@ -79,15 +80,19 @@ abstract class EmailRegistrationServiceFlixTest(
         }
 
         val exp = expectFailure { service.signUp(params1).await() }
+
+        service.abort("steve@rogers.com").await()
+
         expect(exp.message).toBe(UserWithEmailAlreadyCompletedRegistrationException(params1.email).message)
     }
 
     @Test
     fun should_be_able_to_complete_registration_with_any_token() = runTest {
-        val params1 = EmailSignUpParams("Jarvis Stark", "jarvis+t2@stark.com")
+        val params1 = EmailSignUpParams("Jason Vorhes", "jason@vorhes.com")
         val res = service.signUp(params1).await()
-        val params2 = res.email.toSendVerificationLinkParams()
+        val params2 = params1.email.toSendVerificationLinkParams()
 
+        sender.outbox.clear()
         repeat(10) { service.sendVerificationLink(params2).await() }
 
         val email = sender.outbox.random()

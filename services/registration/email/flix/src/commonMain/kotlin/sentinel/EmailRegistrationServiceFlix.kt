@@ -107,7 +107,9 @@ class EmailRegistrationServiceFlix(private val options: EmailRegistrationService
     override fun verify(params: EmailVerificationParams): Later<EmailVerificationParams> = options.scope.later {
         val tracer = logger.trace(actions.verify(params.email))
         val candidate = candidateWith(params.email) ?: throw UserWithEmailDidNotBeginRegistrationException(params.email).also { tracer.failed(it) }
-        if (params.token !in candidate.tokens.map { it.text }) {
+        val tokens = candidate.tokens.map { it.text }
+        logger.debug(tokens.joinToString(prefix = "Tokens\n\t${params.token}*\n\t", separator = "\n\t"))
+        if (params.token !in tokens) {
             throw InvalidTokenForRegistrationException(params.token).also { tracer.failed(it) }
         }
         val query = eq(EmailRegistrationCandidateDao::email.name, params.email)
