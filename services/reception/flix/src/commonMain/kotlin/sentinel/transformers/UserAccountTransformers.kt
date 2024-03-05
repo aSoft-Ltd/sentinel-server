@@ -5,7 +5,7 @@ import sentinel.BusinessAccountDao
 import sentinel.PersonalAccountDao
 import sentinel.params.UserAccountParams
 
-fun UserAccountParams.toPersonDao(registrationId: ObjectId,name: String) = PersonalAccountDao(
+fun UserAccountParams.toPersonDao(registrationId: ObjectId, name: String) = PersonalAccountDao(
     name = name,
     photo = null,
     password = password,
@@ -13,7 +13,8 @@ fun UserAccountParams.toPersonDao(registrationId: ObjectId,name: String) = Perso
     registrationId = registrationId
 )
 
-fun UserAccountParams.toBusinessDao(name: String) = BusinessAccountDao(
+fun UserAccountParams.toBusinessDao(name: String, scope: ObjectId?) = BusinessAccountDao(
     name = name,
     logo = null,
+    scope = scope
 )

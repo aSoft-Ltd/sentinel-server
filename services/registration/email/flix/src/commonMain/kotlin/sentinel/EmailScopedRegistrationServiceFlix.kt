@@ -9,7 +9,6 @@ import koncurrent.later.await
 import kotlinx.coroutines.flow.toList
 import krono.currentJavaLocalDateTime
 import org.bson.types.ObjectId
-import raven.Address
 import raven.FactoryParams
 import sentinel.exceptions.InvalidTokenForRegistrationException
 import sentinel.exceptions.UserWithEmailAlreadyBeganRegistrationException
@@ -24,7 +23,7 @@ import sentinel.transformers.toBusinessDao
 import sentinel.transformers.toDao
 import sentinel.transformers.toPersonDao
 
-class EmailRegistrationServiceFlix(private val options: EmailRegistrationServiceFlixOptions) : EmailRegistrationService {
+class EmailScopedRegistrationServiceFlix(private val options: EmailScopedRegistrationServiceFlixOptions) : EmailRegistrationService {
 
     private val collection by lazy { Collection() }
     private val sender = options.sender
@@ -55,6 +54,8 @@ class EmailRegistrationServiceFlix(private val options: EmailRegistrationService
         return candidates.firstOrNull()
     }
 
+    private fun getParentScope(domain: String): ObjectId = ObjectId(domain)
+
     override fun signUp(params: EmailSignUpParams) = options.scope.later {
         val tracer = logger.trace(actions.signUp(params.email))
         if (collection.personal.find(eq(PersonalAccountDao::email.name, params.email)).toList().isNotEmpty()) {
@@ -67,7 +68,7 @@ class EmailRegistrationServiceFlix(private val options: EmailRegistrationService
         }.also {
             tracer.failed(it)
         }
-        collection.candidate.insertOne(params.toDao(options.clock, null))
+        collection.candidate.insertOne(params.toDao(options.clock, getParentScope(options.parent)))
         tracer.passed()
         params
     }
@@ -127,12 +128,13 @@ class EmailRegistrationServiceFlix(private val options: EmailRegistrationService
 
         val person = collection.personal.insertOne(params.toPersonDao(candidate.uid!!, candidate.name))
 
-        val business = collection.business.insertOne(params.toBusinessDao(candidate.name, null))
+        val business = collection.business.insertOne(params.toBusinessDao(candidate.name, getParentScope(options.parent)))
 
         val pbr = PersonBusinessRelationDao(
             business = business.insertedId!!.asObjectId().value,
             person = person.insertedId!!.asObjectId().value
         )
+
         collection.relation.insertOne(pbr)
         collection.candidate.deleteMany(eq(EmailRegistrationCandidateDao::email.name, params.loginId))
         options.bus.dispatch(options.topic.completed(pbr.person.toHexString()), params)

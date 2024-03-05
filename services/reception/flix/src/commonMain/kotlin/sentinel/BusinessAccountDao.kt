@@ -6,6 +6,7 @@ import org.bson.types.ObjectId
 data class BusinessAccountDao(
     val name: String,
     val logo: String?,
+    val scope: ObjectId? = null,
     @BsonId val uid: ObjectId? = null
 ) {
     companion object {

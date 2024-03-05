@@ -10,6 +10,7 @@ data class EmailRegistrationCandidateDao(
     val on: LocalDateTime,
     val tokens: List<VerificationTokenDao>,
     val verified: Boolean,
+    val scope: ObjectId? = null,
     @BsonId val uid: ObjectId? = null
 ) {
     companion object {
