@@ -17,28 +17,28 @@ import sentinel.params.SessionParams
 fun Routing.installScopedAuthentication(controller: ScopedAuthenticationController) {
     post(controller.endpoint.signIn(), controller.codec) {
         val params = controller.codec.decodeFromString<EmailSignInParams>(call.receiveText())
-        val scope = call.request.header("x-monitor-scope") ?: throw IllegalArgumentException("No scope provided")
+        val scope = call.request.header(controller.resolver) ?: throw IllegalArgumentException("No scope provided")
         val service = controller.service(scope)
         service.signIn(params).await()
     }
 
     post(controller.endpoint.session(), controller.codec) {
         val params = controller.codec.decodeFromString<SessionParams>(call.receiveText())
-        val scope = call.request.header("x-monitor-scope") ?: throw IllegalArgumentException("No scope provided")
+        val scope = call.request.header(controller.resolver) ?: throw IllegalArgumentException("No scope provided")
         val service = controller.service(scope)
         service.session(params.token).await()
     }
 
     post(controller.endpoint.sendPasswordResetLink(), controller.codec) {
         val params = controller.codec.decodeFromString<SendPasswordResetParams>(call.receiveText())
-        val scope = call.request.header("x-monitor-scope") ?: throw IllegalArgumentException("No scope provided")
+        val scope = call.request.header(controller.resolver) ?: throw IllegalArgumentException("No scope provided")
         val service = controller.service(scope)
         service.sendPasswordResetLink(params).await()
     }
 
     post(controller.endpoint.resetPassword(), controller.codec) {
         val params = controller.codec.decodeFromString<PasswordResetParams>(call.receiveText())
-        val scope = call.request.header("x-monitor-scope") ?: throw IllegalArgumentException("No scope provided")
+        val scope = call.request.header(controller.resolver) ?: throw IllegalArgumentException("No scope provided")
         val service = controller.service(scope)
         service.resetPassword(params).await()
     }
@@ -46,14 +46,14 @@ fun Routing.installScopedAuthentication(controller: ScopedAuthenticationControll
     get(controller.endpoint.delete("{email}", "{password}"), controller.codec) {
         val email: String by call.parameters
         val password: String by call.parameters
-        val scope = call.request.header("x-monitor-scope") ?: throw IllegalArgumentException("No scope provided")
+        val scope = call.request.header(controller.resolver) ?: throw IllegalArgumentException("No scope provided")
         val service = controller.service(scope)
         service.delete(EmailSignInParams(email, password)).await()
     }
 
     get(controller.endpoint.signOut("{token}"), controller.codec) {
         val token: String by call.parameters
-        val scope = call.request.header("x-monitor-scope") ?: throw IllegalArgumentException("No scope provided")
+        val scope = call.request.header(controller.resolver) ?: throw IllegalArgumentException("No scope provided")
         val service = controller.service(scope)
         service.signOut(token).await()
     }

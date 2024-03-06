@@ -23,7 +23,7 @@ import sentinel.transformers.toBusinessDao
 import sentinel.transformers.toDao
 import sentinel.transformers.toPersonDao
 
-class EmailScopedRegistrationServiceFlix(private val options: EmailScopedRegistrationServiceFlixOptions) : EmailRegistrationService {
+class EmailRegistrationScopedServiceFlix(private val options: EmailRegistrationScopedServiceFlixOptions) : EmailRegistrationService {
 
     private val collection by lazy { Collection() }
     private val sender = options.sender

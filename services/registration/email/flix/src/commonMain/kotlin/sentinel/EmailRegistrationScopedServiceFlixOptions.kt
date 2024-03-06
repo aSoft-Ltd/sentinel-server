@@ -7,7 +7,7 @@ import raven.MultiEmailSender
 import raven.TemplatedEmailOptions
 import sanity.EventBus
 
-class EmailScopedRegistrationServiceFlixOptions(
+class EmailRegistrationScopedServiceFlixOptions(
     val scope: CoroutineScope,
     val database: ReceptionDatabase,
     val parent: String,
