@@ -41,9 +41,9 @@ class EmailAuthenticationScopedServiceFlix(private val options: EmailAuthenticat
         val user = person.toIndividual()
         val company = loadCompanyFor(person).toCorporate()
 
-        if (company.uid != parent) {
-            throw ScopeMismatchAuthenticationException().also { tracer.failed(it) }
-        }
+//        if (company.uid != parent) {
+//            throw ScopeMismatchAuthenticationException().also { tracer.failed(it) }
+//        }
 
         val session = SessionDao(
             token = ObjectId.get().toHexString()?.chunked(4)?.joinToString("-") ?: throw RuntimeException("Failed to create a session token"),
