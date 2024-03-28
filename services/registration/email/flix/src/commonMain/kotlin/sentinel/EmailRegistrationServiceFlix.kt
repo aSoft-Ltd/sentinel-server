@@ -135,7 +135,13 @@ class EmailRegistrationServiceFlix(private val options: EmailRegistrationService
         )
         collection.relation.insertOne(pbr)
         collection.candidate.deleteMany(eq(EmailRegistrationCandidateDao::email.name, params.loginId))
-        options.bus.dispatch(options.topic.completed(pbr.person.toHexString()), params)
+        val event = EmailRegistrationCompletedEvent(
+            email = params.loginId,
+            password = params.password,
+            name = candidate.name,
+            scope = null
+        )
+        options.bus.dispatch(options.topic.completed(pbr.person.toHexString()), event)
         tracer.passed()
         params
     }
