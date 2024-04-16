@@ -3,6 +3,8 @@ package sentinel
 import com.mongodb.client.model.Filters.eq
 import com.mongodb.client.model.Updates
 import kash.Currency
+import kollections.map
+import kollections.toSet
 import koncurrent.Later
 import koncurrent.later
 import koncurrent.later.await
@@ -27,6 +29,9 @@ class EmailAuthenticationServiceFlix(private val options: EmailAuthenticationSer
     private val sender = options.sender
     private val logger by options.logger
     private val actions by lazy { AuthenticationActionMessage() }
+    private val bus = options.bus
+    private val topic = options.topic
+
     override fun signIn(params: EmailSignInParams): Later<UserSession> = options.scope.later {
         val tracer = logger.trace(actions.signIn(params.email))
         val person = col.find(eq(PersonalAccountDao::email.name, params.email)).toList().firstOrNull() ?: run {
@@ -158,8 +163,23 @@ class EmailAuthenticationServiceFlix(private val options: EmailAuthenticationSer
             throw InvalidCredentialsAuthenticationException().also { tracer.failed(it) }
         }
         col.deleteOne(eq(PersonalAccountDao::email.name, params.email))
+        bus.dispatch(topic.deletedUser(person.uid?.toHexString().toString()), person.toIndividual())
         val sessionCollection = options.database.getCollection<SessionDao>(SessionDao.collection)
         sessionCollection.deleteMany(eq(SessionDao::user.name, person.uid))
+
+        // delete their information on businesses
+        val pbrCollection = options.database.getCollection<PersonBusinessRelationDao>(PersonBusinessRelationDao.collection)
+        val pbr = pbrCollection.find(eq(PersonBusinessRelationDao::person.name, person.uid)).toList()
+        pbrCollection.deleteMany(eq(PersonBusinessRelationDao::person.name, person.uid))
+
+        pbr.filter {
+            pbrCollection.find(eq(PersonBusinessRelationDao::business.name, it.business)).toList().isEmpty()
+        }.map { it.business }.toSet().forEach { business ->
+            options.database.getCollection<BusinessAccountDao>(BusinessAccountDao.collection).deleteOne(eq("_id", business))
+            val uid = business.toHexString()
+            bus.dispatch(topic.deletedBusiness(uid), uid)
+        }
+
         tracer.passed()
         params
     }
