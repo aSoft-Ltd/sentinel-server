@@ -7,7 +7,7 @@ import io.ktor.server.routing.*
 import io.ktor.util.pipeline.PipelineContext
 import sentinel.exceptions.MissingAuthenticationException
 
-fun RoutingContext.bearerToken(): String {
+fun PipelineContext<*, ApplicationCall>.bearerToken(): String {
     val auth = call.request.header("Authorization") ?: throw MissingAuthenticationException()
     return auth.replace("Bearer ","")
 }
