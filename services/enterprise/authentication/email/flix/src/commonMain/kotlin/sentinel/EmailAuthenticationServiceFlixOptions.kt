@@ -12,7 +12,7 @@ class EmailAuthenticationServiceFlixOptions(
     val database: MongoDatabase,
     val sender: MultiEmailSender,
     val logger: LoggerFactory,
-    val email: TemplatedEmailOptions,
+    val email: TemplatedEmailOptions<Any?>,
     val bus: EventBus,
     val topic: AuthenticationTopic
 )

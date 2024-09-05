@@ -1,11 +1,13 @@
 package sentinel
 
+import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Filters.eq
 import com.mongodb.client.model.Updates
 import com.mongodb.client.model.Updates.set
 import koncurrent.Later
 import koncurrent.later
 import koncurrent.later.await
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import krono.currentJavaLocalDateTime
 import org.bson.types.ObjectId
@@ -68,9 +70,16 @@ class EmailRegistrationScopedServiceFlix(private val options: EmailRegistrationS
         }.also {
             tracer.failed(it)
         }
-        collection.candidate.insertOne(params.toDao(options.clock, getParentScope(options.parent)))
+        val inserted = collection.candidate.insertOne(params.toDao(options.clock, getParentScope(options.parent)))
         tracer.passed()
-        params
+        collection.candidate.find(eq("_id", inserted.insertedId!!.asObjectId().value)).firstOrNull()?.let {
+            EmailRegistrationCandidateDto(
+                email = it.email,
+                name = it.name,
+                uid = it.uid?.toHexString() ?: throw Exception("Invalid registration uid"),
+                verified = it.verified
+            )
+        } ?: throw Exception("Invalid registration uid")
     }
 
     override fun sendVerificationLink(params: SendVerificationLinkParams): Later<String> = options.scope.later {
@@ -92,8 +101,8 @@ class EmailRegistrationScopedServiceFlix(private val options: EmailRegistrationS
         val update = Updates.addToSet(EmailRegistrationCandidateDao::tokens.name, entry)
         col.updateOne(query, update)
 
-        val fp = FactoryParams(candidate.toAddress(), "${params.link}?token=$token", params.meta)
-        sender.send(options.verification.factory(fp)).await()
+        val fp = FactoryParams(candidate.toAddress(), "${params.link}?token=$token&email=${params.email}", params.meta)
+        sender.send(options.verification.factory(fp, null)).await()
         tracer.passed()
         params.email
     }

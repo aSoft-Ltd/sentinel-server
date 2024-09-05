@@ -13,7 +13,7 @@ class EmailAuthenticationScopedServiceFlixOptions(
     val sender: MultiEmailSender,
     val parent: String,
     val logger: LoggerFactory,
-    val email: TemplatedEmailOptions,
+    val email: TemplatedEmailOptions<Any?>,
     val bus: EventBus,
     val topic: AuthenticationTopic
 )

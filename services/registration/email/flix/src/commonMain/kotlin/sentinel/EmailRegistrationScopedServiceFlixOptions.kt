@@ -16,5 +16,5 @@ class EmailRegistrationScopedServiceFlixOptions(
     val topic: RegistrationTopic,
     val sender: MultiEmailSender,
     val logger: LoggerFactory,
-    val verification: TemplatedEmailOptions,
+    val verification: TemplatedEmailOptions<Any?>,
 )

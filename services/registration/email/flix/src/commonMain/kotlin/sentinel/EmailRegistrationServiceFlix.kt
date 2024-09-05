@@ -1,11 +1,13 @@
 package sentinel
 
+import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Filters.eq
 import com.mongodb.client.model.Updates
 import com.mongodb.client.model.Updates.set
 import koncurrent.Later
 import koncurrent.later
 import koncurrent.later.await
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import krono.currentJavaLocalDateTime
 import org.bson.types.ObjectId
@@ -67,9 +69,17 @@ class EmailRegistrationServiceFlix(private val options: EmailRegistrationService
         }.also {
             tracer.failed(it)
         }
-        collection.candidate.insertOne(params.toDao(options.clock, null))
+        val inserted = collection.candidate.insertOne(params.toDao(options.clock, null))
         tracer.passed()
-        params
+        collection.candidate.find(eq("_id", inserted.insertedId!!.asObjectId().value)).firstOrNull()?.let {
+            EmailRegistrationCandidateDto(
+                email = it.email,
+                name = it.name,
+                uid = it.uid?.toHexString() ?: throw Exception("Invalid registration uid"),
+                verified = it.verified
+            )
+        }?: throw Exception("Failed to signup")
+//        params
     }
 
     override fun sendVerificationLink(params: SendVerificationLinkParams): Later<String> = options.scope.later {
@@ -91,8 +101,8 @@ class EmailRegistrationServiceFlix(private val options: EmailRegistrationService
         val update = Updates.addToSet(EmailRegistrationCandidateDao::tokens.name, entry)
         col.updateOne(query, update)
 
-        val fp = FactoryParams(candidate.toAddress(), "${params.link}?token=$token", params.meta)
-        sender.send(options.verification.factory(fp)).await()
+        val fp = FactoryParams(candidate.toAddress(), "${params.link}?token=$token&email=${params.email}", params.meta)
+        sender.send(options.verification.factory(fp, null)).await()
         tracer.passed()
         params.email
     }
@@ -126,6 +136,9 @@ class EmailRegistrationServiceFlix(private val options: EmailRegistrationService
         }
 
         val person = collection.personal.insertOne(params.toPersonDao(candidate.uid!!, candidate.name))
+        collection.personal.find(eq("_id", person.insertedId!!.asObjectId().value)).firstOrNull()?.let { dao->
+            options.done(candidate, dao)
+        }
 
         val business = collection.business.insertOne(params.toBusinessDao(candidate.name, null))
 
