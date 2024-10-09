@@ -14,18 +14,18 @@ import raven.toHtmlString
 class EmailRegistrationServiceConfiguration(
     val verification: TemplatedWrapperEmailConfiguration
 ) {
-    fun toOptions(brand: Brand, clock: SystemClock): TemplatedEmailOptions<Any?> {
+    fun toOptions(defaultBrand: Brand, clock: SystemClock): TemplatedEmailOptions<Any?> {
         val service = "registration verification"
         val from = verification.toAddress(service)
         val subject = verification.toSubject(service)
 
-        return TemplatedEmailOptions { params,input ->
-
+        return TemplatedEmailOptions { params,input,_brand ->
+            val brand = _brand ?: defaultBrand
             val greeting = "Hello ${params.to.name}"
             SendEmailParams(
                 from = from,
                 to = params.to,
-                subject = subject,
+                subject = "Your ${brand.name} account verification",
                 body = EmailTemplate(
                     plain = "$greeting, here is your verification token. \n${params.link}",
                     html = VerificationEmails.verification(

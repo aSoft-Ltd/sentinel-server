@@ -1,5 +1,6 @@
 package sentinel
 
+import identifier.Brand
 import kotlinx.coroutines.CoroutineScope
 import krono.Clock
 import lexi.LoggerFactory
@@ -17,4 +18,5 @@ class EmailRegistrationScopedServiceFlixOptions(
     val sender: MultiEmailSender,
     val logger: LoggerFactory,
     val verification: TemplatedEmailOptions<Any?>,
+    val brand: Brand?
 )

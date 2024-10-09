@@ -130,7 +130,7 @@ class EmailAuthenticationServiceFlix(private val options: EmailAuthenticationSer
         val send = async {
             val link = "${params.link}?token=${token.toHexString().chunked(4).joinToString("-")}"
             val fp = FactoryParams(Address(email = email, name = person.name), link, params.meta)
-            sender.send(options.email.factory(fp, null)).await()
+            sender.send(options.email.factory(fp, null, null)).await()
         }
 
         insert.await(); send.await()

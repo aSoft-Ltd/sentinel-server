@@ -18,8 +18,7 @@ fun ComponentScope<Body>.Footer(
             text(css.color(brand.color.background), brand.name)
         }
         p {
-            text(css.font(size = font), "If you did not do register this kind of action, report ")
-            text(css.font(size = font).color(brand.color.background), "here")
+            text(css.font(size = font), "If you did not do register this kind of action, ignore this email ")
         }
         p { text(css.font(size = font), brand.address) }
         p { text(css.font(size = font), "Copyright ${169.toChar()} $year") }

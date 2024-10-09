@@ -102,7 +102,7 @@ class EmailRegistrationScopedServiceFlix(private val options: EmailRegistrationS
         col.updateOne(query, update)
 
         val fp = FactoryParams(candidate.toAddress(), "${params.link}?token=$token&email=${params.email}", params.meta)
-        sender.send(options.verification.factory(fp, null)).await()
+        sender.send(options.verification.factory(fp, null, options.brand)).await()
         tracer.passed()
         params.email
     }

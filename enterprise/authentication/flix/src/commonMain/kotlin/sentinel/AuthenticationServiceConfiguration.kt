@@ -14,17 +14,18 @@ import raven.toHtmlString
 class AuthenticationServiceConfiguration(
     val recovery: TemplatedWrapperEmailConfiguration
 ) {
-    fun toOptions(brand: Brand, clock: SystemClock): TemplatedEmailOptions {
+    fun toOptions(defaultbrand: Brand, clock: SystemClock): TemplatedEmailOptions<Any?> {
         val service = "registration verification"
         val from = recovery.toAddress(service)
         val subject = recovery.toSubject(service)
 
-        return TemplatedEmailOptions { to, link ->
-            val greeting = "Hello ${to.name},"
+        return TemplatedEmailOptions { params, link, _brand ->
+            val greeting = "Hello ${params.to.name},"
+            val brand = _brand ?: defaultbrand
             SendEmailParams(
                 from = from,
-                to = to,
-                subject = subject,
+                to = params.to,
+                subject = "Your ${brand.name} account verification",,
                 body = EmailTemplate(
                     plain = "$greeting, here is your verification token. \n$link",
                     html = RecoveryEmails.recovery(
@@ -32,7 +33,7 @@ class AuthenticationServiceConfiguration(
                         label = brand.name,
                         greeting = greeting,
                         receptionist = null,
-                        link = link,
+                        link = params.link,
                         year = clock.currentInstant().atSystemZone().year.toString()
                     ).toHtmlString(" ")
                 )
