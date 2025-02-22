@@ -136,14 +136,14 @@ class EmailRegistrationServiceFlix(private val options: EmailRegistrationService
         }
 
         val person = collection.personal.insertOne(params.toPersonDao(candidate.uid!!, candidate.name))
-        collection.personal.find(eq("_id", person.insertedId!!.asObjectId().value)).firstOrNull()?.let { dao->
+        val business = collection.personal.find(eq("_id", person.insertedId!!.asObjectId().value)).firstOrNull()?.let { dao->
             options.done(candidate, dao)
         }
-
-        val business = collection.business.insertOne(params.toBusinessDao(candidate.name, null))
+        val businessId = business?.uid ?: collection.business.insertOne(params.toBusinessDao(candidate.name, null)).insertedId!!.asObjectId().value
+//        val business = collection.business.insertOne(params.toBusinessDao(candidate.name, null))
 
         val pbr = PersonBusinessRelationDao(
-            business = business.insertedId!!.asObjectId().value,
+            business = businessId,
             person = person.insertedId!!.asObjectId().value
         )
         collection.relation.insertOne(pbr)

@@ -16,5 +16,5 @@ class EmailRegistrationServiceFlixOptions(
     val sender: MultiEmailSender,
     val logger: LoggerFactory,
     val verification: TemplatedEmailOptions<Any?>,
-    val done: suspend (registration:EmailRegistrationCandidateDao, dao:PersonalAccountDao)->Unit,
+    val done: suspend (registration:EmailRegistrationCandidateDao, dao:PersonalAccountDao)->BusinessAccountDao?,
 )
