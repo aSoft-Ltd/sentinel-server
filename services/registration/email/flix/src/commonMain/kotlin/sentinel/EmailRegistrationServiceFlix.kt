@@ -59,6 +59,11 @@ class EmailRegistrationServiceFlix(private val options: EmailRegistrationService
 
     override fun signUp(params: EmailSignUpParams) = options.scope.later {
         val tracer = logger.trace(actions.signUp(params.email))
+        if (options.singleUser) {
+            if (collection.personal.find().toList().isNotEmpty()) {
+                throw Exception("Not allowed").also { tracer.failed(it) }
+            }
+        }
         if (collection.personal.find(eq(PersonalAccountDao::email.name, params.email)).toList().isNotEmpty()) {
             throw UserWithEmailAlreadyCompletedRegistrationException(params.email).also { tracer.failed(it) }
         }
